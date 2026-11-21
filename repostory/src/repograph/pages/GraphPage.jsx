@@ -242,7 +242,7 @@ export default function GraphPage({ model, selected, onSelect, onSetCompare }) {
       {/* Graph */}
       <section aria-label="Commit graph" className="flex min-w-0 flex-col bg-panel lg:min-h-0">
         <div className="flex flex-wrap items-center gap-2 border-b border-line px-4 py-2">
-          <div className="relative flex-[0_1_280px] max-sm:basis-full">
+          <div className="relative flex-[0_1_240px] max-sm:basis-full">
             <label htmlFor="search" className="sr-only">Search commits</label>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true" className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-muted">
               <circle cx="11" cy="11" r="7" />
@@ -254,12 +254,12 @@ export default function GraphPage({ model, selected, onSelect, onSetCompare }) {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={(e) => e.key === 'Escape' && e.currentTarget.blur()}
-              placeholder="Search hash, message, author"
+              placeholder="Search commits"
               className={`${fieldClass} w-full bg-ink pl-8`}
             />
           </div>
           <label htmlFor="branchFilter" className="sr-only">Show branch</label>
-          <select id="branchFilter" value={branch} onChange={(e) => setBranch(e.target.value)} className={`${fieldClass} bg-ink`}>
+          <select id="branchFilter" value={branch} onChange={(e) => setBranch(e.target.value)} className={`${fieldClass} max-w-[180px] bg-ink`}>
             <option value="">All branches</option>
             {model.branches.map((b) => (
               <option key={b.name} value={b.hash}>{b.name}</option>
@@ -279,7 +279,7 @@ export default function GraphPage({ model, selected, onSelect, onSetCompare }) {
             className="ml-auto max-md:hidden"
             trigger={
               <button type="button" className="flex min-h-8 cursor-default items-center gap-1.5 rounded-lg px-2 text-xs tabular-nums text-muted hover:text-subtle">
-                {s.commits} commits · {s.merges} merges · {s.width} lanes
+                {s.commits} commits · {s.merges} merges
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
                   <circle cx="12" cy="12" r="9" />
                   <path d="M12 11v5M12 8h.01" />

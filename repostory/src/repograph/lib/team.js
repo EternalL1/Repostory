@@ -3,6 +3,13 @@ import { timeParts } from './git.js'
 const MERGE_BRANCH = /^Merge (?:remote-tracking )?branch '([^']+)'(?: of \S+)?(?: into (\S+))?/
 const MERGE_PR = /^Merge pull request #\d+ from (\S+)/
 
+/** Groups branch names by type so flows read "feat/* → main 58×" rather than 58 one-off rows. */
+export function branchGroup(name) {
+  const local = name.replace(/^(origin|upstream)\//, '')
+  const i = local.indexOf('/')
+  return i > 0 ? `${local.slice(0, i)}/*` : local
+}
+
 /** Team-level stats for the Team view. */
 export function teamStats(model) {
   const byAuthor = new Map()
@@ -31,9 +38,11 @@ export function teamStats(model) {
       let m = MERGE_BRANCH.exec(c.subject)
       let from = m?.[1]
       let into = m?.[2]
-      if (!m && (m = MERGE_PR.exec(c.subject))) from = m[1]
+      // a pull request names "<owner>/<branch>"; the owner is not part of the branch
+      if (!m && (m = MERGE_PR.exec(c.subject))) from = m[1].split('/').slice(1).join('/') || m[1]
       if (from) {
-        into = into || 'main'
+        from = branchGroup(from)
+        into = branchGroup(into || 'main')
         const key = `${from}\u0000${into}`
         flows.set(key, { from, into, count: (flows.get(key)?.count || 0) + 1 })
       }

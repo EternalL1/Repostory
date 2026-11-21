@@ -1,11 +1,19 @@
-import { useRef, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import CommitGraph from '../components/CommitGraph.jsx'
 import { GIT_LOG_COMMAND } from '../lib/git.js'
+import { SAMPLES } from '../lib/samples.js'
 import { Button, CopyButton, fieldClass } from '../components/ui.jsx'
+
+/** "462 commits · 8 people", read straight from the generated text (cheaper than building each graph). */
+function sampleSize(text) {
+  const lines = text.split('\n').filter((l) => l.startsWith('@@'))
+  const people = new Set(lines.map((l) => l.split('|')[2]))
+  return `${lines.length} commits · ${people.size} ${people.size === 1 ? 'person' : 'people'}`
+}
 
 const PREVIEW_ROWS = 13
 
-export default function LoadPage({ model, error, onLoad, onLoadSample, onOpenGraph, isSample }) {
+export default function LoadPage({ model, error, onLoad, onLoadSample, onOpenGraph }) {
   const [text, setText] = useState('')
   const [name, setName] = useState('')
   const [dragging, setDragging] = useState(false)
@@ -18,6 +26,7 @@ export default function LoadPage({ model, error, onLoad, onLoadSample, onOpenGra
   }
 
   const lines = text ? text.split('\n').filter((l) => l.startsWith('@@')).length : 0
+  const samples = useMemo(() => SAMPLES.map((s) => ({ ...s, size: sampleSize(s.text()) })), [])
 
   return (
     <main className="mx-auto grid max-w-[1240px] gap-x-14 gap-y-12 px-4 pb-16 pt-10 sm:px-8 sm:pt-14 lg:grid-cols-[minmax(0,460px)_minmax(0,1fr)]">
@@ -114,16 +123,9 @@ export default function LoadPage({ model, error, onLoad, onLoadSample, onOpenGra
             <span className="text-xs tabular-nums text-muted">
               {model.stats.commits} commits · {model.branches.length} branches · {model.authorCount} authors
             </span>
-            <span className="ml-auto flex gap-1">
-              {!isSample && (
-                <Button variant="ghost" onClick={onLoadSample}>
-                  Load sample
-                </Button>
-              )}
-              <Button variant="ghost" onClick={() => onOpenGraph()}>
-                Open graph →
-              </Button>
-            </span>
+            <Button variant="ghost" className="ml-auto" onClick={() => onOpenGraph()}>
+              Open graph →
+            </Button>
           </div>
           <div className="relative overflow-hidden rounded-xl border border-line bg-panel">
             <CommitGraph model={model} compact={PREVIEW_ROWS} onSelect={(hash) => onOpenGraph(hash)} />
@@ -132,6 +134,35 @@ export default function LoadPage({ model, error, onLoad, onLoadSample, onOpenGra
             )}
           </div>
           <p className="m-0 text-xs text-muted">Click any commit to open it in the graph.</p>
+
+          <div className="mt-6">
+            <h2 className="m-0 mb-2 text-sm font-semibold">Try a sample</h2>
+            <p className="m-0 mb-3 text-xs text-muted">Fictional repositories, generated in your browser.</p>
+            <ul className="m-0 list-none border-t border-line p-0">
+              {samples.map((s) => {
+                const loaded = s.name === model.name
+                return (
+                  <li key={s.id} className="border-b border-line">
+                    <button
+                      type="button"
+                      onClick={() => onLoadSample(s.id)}
+                      aria-current={loaded ? 'true' : undefined}
+                      className="group flex w-full cursor-pointer items-center gap-4 px-1 py-2.5 text-left transition-colors duration-150 hover:bg-fg/[0.04]"
+                    >
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate font-mono text-sm text-fg">{s.name}</span>
+                        <span className="block truncate text-xs text-muted">{s.blurb}</span>
+                      </span>
+                      <span className="flex-none text-right text-xs text-muted max-sm:hidden">{s.size}</span>
+                      <span className={`w-16 flex-none text-right text-xs ${loaded ? 'text-path' : 'text-soft group-hover:text-fg'}`}>
+                        {loaded ? 'Loaded' : 'Open →'}
+                      </span>
+                    </button>
+                  </li>
+                )
+              })}
+            </ul>
+          </div>
         </section>
       )}
     </main>

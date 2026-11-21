@@ -1,22 +1,29 @@
 import { useEffect, useState } from 'react'
 import Header from './components/Header.jsx'
 import { buildModel, defaultComparison } from './lib/git.js'
-import { SAMPLE_NAME, sampleLogText } from './lib/sample.js'
+import { SAMPLES } from './lib/samples.js'
 import ComparePage from './pages/ComparePage.jsx'
 import GraphPage from './pages/GraphPage.jsx'
 import LoadPage from './pages/LoadPage.jsx'
 import TeamPage from './pages/TeamPage.jsx'
 
 const STORAGE_KEY = 'repograph.lastRepo'
+const DEFAULT_SAMPLE = 'storefront'
+
+const sampleModel = (id) => {
+  const s = SAMPLES.find((x) => x.id === id) || SAMPLES.find((x) => x.id === DEFAULT_SAMPLE)
+  return buildModel(s.text(), s.name)
+}
 
 function initialModel() {
   try {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null')
     if (saved?.text) return buildModel(saved.text, saved.name)
+    if (saved?.sample) return sampleModel(saved.sample)
   } catch {
-    /* fall back to the sample */
+    /* fall back to the default sample */
   }
-  return buildModel(sampleLogText(), SAMPLE_NAME)
+  return sampleModel(DEFAULT_SAMPLE)
 }
 
 /** The whole RepoGraph app. Drop <RepoGraph /> anywhere in a React + Tailwind v4 app. */
@@ -54,13 +61,14 @@ export default function RepoGraph() {
     }
   }
 
-  const loadSample = () => {
+  const loadSample = (id) => {
     try {
-      localStorage.removeItem(STORAGE_KEY)
+      // remember the pick (small), not the generated text
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ sample: id }))
     } catch {
       /* ignore */
     }
-    applyModel(buildModel(sampleLogText(), SAMPLE_NAME))
+    applyModel(sampleModel(id))
   }
 
   const setCompareSide = (side, hash) => {
@@ -75,7 +83,6 @@ export default function RepoGraph() {
         <LoadPage
           model={model}
           error={error}
-          isSample={model.name === SAMPLE_NAME}
           onLoad={loadText}
           onLoadSample={loadSample}
           onOpenGraph={(hash) => {

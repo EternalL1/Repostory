@@ -151,7 +151,7 @@ export default function TeamPage({ model }) {
               <thead>
                 <tr className="text-xs text-muted">
                   <th className="pb-2 font-normal">File</th>
-                  <th className="w-[96px] pb-2 font-normal">Changes</th>
+                  <th className="w-[112px] pb-2 font-normal">Changes</th>
                   <th className="w-[96px] pb-2 text-right font-normal">Owners</th>
                 </tr>
               </thead>
@@ -167,14 +167,14 @@ export default function TeamPage({ model }) {
                       </td>
                       <td className="py-2">
                         <div className="flex items-center gap-2">
-                          <div className="h-1 flex-1 rounded-full bg-panel-2">
+                          <div className="h-1 flex-1 rounded-full bg-panel-2" aria-hidden="true">
                             <div className="h-1 rounded-full bg-soft" style={{ width: `${(f.changes / maxChanges) * 100}%` }} />
                           </div>
-                          <span className="w-4 text-right text-xs tabular-nums">{f.changes}</span>
+                          <span className="w-6 text-right text-xs tabular-nums">{f.changes}</span>
                         </div>
                       </td>
                       <td className={`truncate py-2 text-right text-xs ${single ? 'text-branch-b' : 'text-soft'}`}>
-                        {single ? `${firstName(f.authors[0])} only` : f.authors.map(firstName).join(', ')}
+                        {single ? `${firstName(f.authors[0])} only` : f.authors.length > 2 ? `${f.authors.length} people` : f.authors.map(firstName).join(', ')}
                       </td>
                     </tr>
                   )

@@ -7,7 +7,7 @@ Built with **React + Vite + Tailwind CSS v4**. No backend: everything runs in th
 
 | Tab | What it does |
 | --- | --- |
-| **Load** | Paste `git log` output, drop or open it as a .txt file, next to a live preview of the loaded graph. Includes a built-in sample repo. |
+| **Load** | Paste `git log` output, drop or open it as a .txt file, next to a live preview of the loaded graph. Four fictional sample repos to try (see below). |
 | **Graph** | Commit DAG with branch lanes in an app shell: branch rail, graph, docked commit inspector. Search, filter by branch, highlight the longest path. `j` / `k` (or arrows) move the selection, `Esc` clears it. |
 | **Compare** | "Compare A with B" answers in one line: diverged at the merge-base (lowest common ancestor) or fast-forward, plus the commits only on each side. |
 | **Team** | Commits per author, weekday × hour heatmap, hotspot files and single owners, merge flow between branches. |
@@ -20,6 +20,21 @@ Opening a local folder and connecting GitHub are planned.
 npm install
 npm run dev
 ```
+
+## Sample repos
+
+All fictional, generated in the browser from a fixed seed (`src/repograph/lib/samples.js`), so they look the same on every load and deploy. They go through the same parser as real `git log` output.
+
+| Sample | What it shows |
+| --- | --- |
+| `acme-storefront` (default) | ~470 commits, 8 people in 7 timezones, pull requests into `main`, release tags, a stale branch |
+| `legacy-billing` | git-flow: `develop`, release branches merged both ways, abandoned branches, an orphan `gh-pages` with no shared history |
+| `sample-android-app` | 22 hand-written commits through a `staging` branch |
+| `dotfiles` | one person, one straight line |
+
+## Deploy on Vercel
+
+`vercel.json` is set up for a static Vite build. In the Vercel dashboard: **Add New → Project → import `EternalL1/RepoStory`**, set **Root Directory** to `repostory`, and deploy. Every push to `main` then redeploys automatically. There is no backend and no environment variables.
 
 ## Load your own repo
 
