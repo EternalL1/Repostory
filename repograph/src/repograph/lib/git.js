@@ -220,7 +220,7 @@ export function buildModel(text, name = 'repository') {
   const headRef = refs.find((r) => r.head)
   const headHash = headRef ? headRef.hash : order[0]?.hash
   const headAncestors = headHash ? ancestors(commits, headHash) : new Set()
-  const latestTs = Math.max(...order.map((c) => c.ts))
+  const latestTs = order.reduce((max, c) => Math.max(max, c.ts), 0)
 
   const branches = refs
     .filter((r) => r.type === 'branch')
