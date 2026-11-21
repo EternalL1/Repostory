@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { formatDate, shortHash } from '../lib/git.js'
 import { COL, laneColor } from '../lib/theme.js'
-import { RefChip } from './ui.jsx'
+import { Badge, RefChip } from './ui.jsx'
 
 const ROW = 36 // px, matches h-9
 const LANE = 20
@@ -20,7 +20,8 @@ export default function CommitGraph({ model, selected, onSelect, mode = 'normal'
 
   useEffect(() => {
     if (!focus) return
-    rowRefs.current.get(focus.hash)?.scrollIntoView({ block: 'center', behavior: 'smooth' })
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    rowRefs.current.get(focus.hash)?.scrollIntoView({ block: 'center', behavior: reduce ? 'auto' : 'smooth' })
   }, [focus])
 
   const statusOf = (c) => {
@@ -96,7 +97,7 @@ export default function CommitGraph({ model, selected, onSelect, mode = 'normal'
       nodes.push(<circle key={`${c.hash}-base`} cx={cx} cy={cy} r="11" fill="none" stroke={COL.mergeBase} strokeWidth="1.5" strokeDasharray="3 2" />)
     }
     if (selected === c.hash) {
-      nodes.push(<circle key={`${c.hash}-sel`} cx={cx} cy={cy} r="10" fill="none" stroke="#fff" strokeWidth="1.5" />)
+      nodes.push(<circle key={`${c.hash}-sel`} cx={cx} cy={cy} r="10" fill="none" stroke={COL.fg} strokeWidth="1.5" />)
     }
     nodes.push(
       <circle
@@ -132,29 +133,30 @@ export default function CommitGraph({ model, selected, onSelect, mode = 'normal'
               <button
                 key={c.hash}
                 type="button"
-                ref={(el) => (el ? rowRefs.current.set(c.hash, el) : rowRefs.current.delete(c.hash))}
+                ref={(el) => {
+                  if (el) rowRefs.current.set(c.hash, el)
+                  else rowRefs.current.delete(c.hash)
+                }}
                 onClick={() => onSelect?.(c.hash)}
                 aria-pressed={isSelected}
-                className={`flex h-9 w-full cursor-pointer items-center gap-2.5 rounded-md pr-4 text-left transition-colors hover:bg-white/5 ${
-                  isSelected ? 'bg-accent/15' : ''
+                className={`flex h-9 w-full cursor-pointer items-center gap-2.5 rounded-md pr-4 text-left transition-[background-color,opacity] duration-150 hover:bg-white/[0.04] ${
+                  isSelected ? 'bg-accent/[0.12] hover:bg-accent/[0.16]' : ''
                 } ${s.dim ? 'opacity-40' : ''}`}
               >
                 <span className="w-16 flex-none font-mono text-xs" style={{ color: hashColor(s) }}>
                   {shortHash(c.hash)}
                 </span>
                 {mode === 'compare' && s.kind === 'base' && (
-                  <span className="flex-none rounded-full bg-merge-base px-2 text-[11px] font-bold leading-[18px] text-[#1a1a1a]">
-                    merge-base
-                  </span>
+                  <Badge color={COL.mergeBase} solid>merge-base</Badge>
                 )}
                 {c.refs.map((r) => (
                   <RefChip key={r.type + r.name} refInfo={r} lane={c.lane} />
                 ))}
-                <span className={`min-w-0 flex-1 truncate ${mode === 'compare' && s.kind === 'shared' ? 'text-soft' : ''}`}>
+                <span className={`min-w-0 flex-1 truncate text-[13px] ${mode === 'compare' && s.kind === 'shared' ? 'text-soft' : ''}`}>
                   {c.subject}
                 </span>
                 <span className="w-[100px] flex-none truncate text-xs text-muted">{c.author}</span>
-                <span className="w-[52px] flex-none text-right text-xs text-muted">{formatDate(c.date)}</span>
+                <span className="w-[52px] flex-none text-right text-xs tabular-nums text-muted">{formatDate(c.date)}</span>
               </button>
             )
           })}

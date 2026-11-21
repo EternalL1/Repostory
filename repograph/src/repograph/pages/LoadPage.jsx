@@ -1,35 +1,23 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { GIT_LOG_COMMAND } from '../lib/git.js'
 import { Logo } from '../components/Header.jsx'
-import { Button, SectionTitle } from '../components/ui.jsx'
+import { Button, CopyButton, SectionTitle, fieldClass } from '../components/ui.jsx'
 
-function Pill({ color, children }) {
+function Step({ n, title, children }) {
   return (
-    <div className="flex items-center gap-2 rounded-full border border-line px-3 py-2 text-[13px] text-subtle">
-      <span className="size-2 rounded-full" style={{ background: color }} />
-      {children}
+    <div className="grid grid-cols-[24px_minmax(0,1fr)] gap-x-3 gap-y-2.5">
+      <span className="grid size-6 place-items-center rounded-full bg-panel-2 text-xs font-semibold tabular-nums text-subtle">{n}</span>
+      <h2 className="m-0 self-center text-sm font-semibold">{title}</h2>
+      <div className="col-start-2 flex min-w-0 flex-col gap-2.5">{children}</div>
     </div>
   )
-}
-
-function SoonBadge() {
-  return <span className="rounded-full border border-line px-2 py-0.5 text-[11px] font-semibold text-muted">Coming soon</span>
 }
 
 export default function LoadPage({ model, error, onLoad, onLoadSample, onOpenGraph }) {
   const [text, setText] = useState('')
   const [name, setName] = useState('')
-  const [copied, setCopied] = useState(false)
-
-  const copy = async () => {
-    try {
-      await navigator.clipboard.writeText(GIT_LOG_COMMAND)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 1500)
-    } catch {
-      /* clipboard not available; the command is still selectable */
-    }
-  }
+  const [dragging, setDragging] = useState(false)
+  const dragDepth = useRef(0)
 
   const readFile = async (file) => {
     if (!file) return
@@ -37,147 +25,88 @@ export default function LoadPage({ model, error, onLoad, onLoadSample, onOpenGra
     if (!name) setName(file.name.replace(/\.(txt|log)$/i, ''))
   }
 
+  const lines = text ? text.split('\n').filter((l) => l.startsWith('@@')).length : 0
+
   return (
-    <main className="mx-auto flex max-w-[1180px] flex-col gap-10 px-8 pb-16 pt-14">
-      <section className="flex flex-wrap items-end justify-between gap-10">
-        <div className="min-w-0 flex-[1_1_520px]">
-          <div className="mb-3 font-mono text-[13px] text-path">git log --graph, but readable</div>
-          <h1 className="m-0 font-display text-5xl font-bold leading-[1.05] tracking-tight">
-            See how your repository
-            <br />
-            really grew.
-          </h1>
-          <p className="mt-4 max-w-[560px] text-[17px] text-soft">
-            RepoGraph turns your commit history into an interactive graph. Find where branches split, how far they've drifted,
-            and who works on what.
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2.5">
-          <Pill color="#7c9cff">Commit DAG</Pill>
-          <Pill color="#f5d547">Merge-base finder</Pill>
-          <Pill color="#ff9f43">Team insights</Pill>
-        </div>
+    <main className="mx-auto flex max-w-[880px] flex-col gap-10 px-4 pb-20 pt-12 sm:px-8 sm:pt-16">
+      <section>
+        <p className="m-0 mb-3 font-mono text-xs text-path">git log → graph</p>
+        <h1 className="m-0 text-[clamp(2rem,5vw,2.75rem)] font-semibold leading-[1.08] tracking-[-0.025em]">
+          See how your repository really grew.
+        </h1>
+        <p className="mb-0 mt-4 max-w-[560px] text-[15px] leading-relaxed text-soft">
+          RepoGraph turns commit history into a graph you can read: where branches split, how far they drifted, and who works on
+          what. It runs in your browser; nothing is uploaded.
+        </p>
       </section>
 
-      <section aria-label="Ways to load a repository" className="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] gap-5">
-        {/* Paste git log */}
-        <form
-          className="flex flex-col gap-3.5 rounded-2xl border border-accent bg-panel p-6"
-          onSubmit={(e) => {
-            e.preventDefault()
-            onLoad(text, name.trim() || 'my-repo')
-          }}
-        >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#7c9cff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <polyline points="4 17 10 11 4 5" />
-                <line x1="12" y1="19" x2="20" y2="19" />
-              </svg>
-              <h2 className="m-0 text-[17px] font-semibold">Paste git log</h2>
+      <form
+        className="flex flex-col gap-7 rounded-2xl border border-line bg-panel p-5 sm:p-7"
+        onSubmit={(e) => {
+          e.preventDefault()
+          onLoad(text, name.trim() || 'my-repo')
+        }}
+      >
+        <Step n="1" title="Run this inside your repository">
+          <div className="flex items-center gap-2 rounded-lg border border-line bg-ink py-1.5 pl-3 pr-1.5">
+            <code className="min-w-0 flex-1 overflow-x-auto whitespace-nowrap py-1 font-mono text-xs text-subtle">{GIT_LOG_COMMAND}</code>
+            <CopyButton text={GIT_LOG_COMMAND} label="Copy command" />
+          </div>
+          <p className="m-0 text-xs text-muted">
+            Big history? Add <code className="font-mono text-soft">-n 500</code> to load the latest 500 commits.
+          </p>
+        </Step>
+
+        <Step n="2" title="Paste the output, or drop the file">
+          <label htmlFor="logInput" className="sr-only">git log output</label>
+          <div className="relative">
+            <textarea
+              id="logInput"
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              onDragEnter={(e) => {
+                e.preventDefault()
+                dragDepth.current++
+                setDragging(true)
+              }}
+              onDragOver={(e) => e.preventDefault()}
+              onDragLeave={() => {
+                if (--dragDepth.current <= 0) setDragging(false)
+              }}
+              onDrop={(e) => {
+                e.preventDefault()
+                dragDepth.current = 0
+                setDragging(false)
+                readFile(e.dataTransfer.files[0])
+              }}
+              spellCheck={false}
+              placeholder="@@d8c7f83…|35a41d6… ae3c4f1…|Dan Lim|2026-10-13T19:10…"
+              className={`${fieldClass} block min-h-36 w-full resize-y py-2.5 font-mono text-xs leading-relaxed ${
+                dragging ? 'border-accent bg-accent/5' : ''
+              }`}
+            />
+            {dragging && (
+              <div className="pointer-events-none absolute inset-0 grid place-items-center rounded-lg text-[13px] font-medium text-accent">
+                Drop to load
+              </div>
+            )}
+          </div>
+          <div className="flex flex-wrap items-end gap-3">
+            <div className="flex min-w-[180px] flex-1 flex-col gap-1.5">
+              <label htmlFor="repoName" className="text-xs text-muted">Repository name</label>
+              <input id="repoName" value={name} onChange={(e) => setName(e.target.value)} placeholder="my-repo" className={`${fieldClass} font-mono`} />
             </div>
-            <span className="rounded-full bg-accent px-2 py-0.5 text-[11px] font-semibold text-ink">Works offline</span>
-          </div>
-          <p className="m-0 text-soft">Run this in your repo, then paste the output (or open it as a .txt file).</p>
-          <div className="flex items-center gap-2 rounded-lg border border-line bg-ink px-3 py-2.5">
-            <code className="min-w-0 flex-1 overflow-x-auto whitespace-nowrap font-mono text-xs text-subtle">{GIT_LOG_COMMAND}</code>
-            <button
-              type="button"
-              onClick={copy}
-              aria-label="Copy command"
-              className="grid size-8 flex-none cursor-pointer place-items-center rounded-md border border-line bg-panel-2 text-xs text-subtle"
-            >
-              {copied ? '✓' : (
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <rect x="9" y="9" width="12" height="12" rx="2" />
-                  <path d="M5 15V5a2 2 0 0 1 2-2h10" />
-                </svg>
-              )}
-            </button>
-          </div>
-          <label htmlFor="repoName" className="text-xs text-muted">Repository name</label>
-          <input
-            id="repoName"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="my-repo"
-            className="min-h-10 rounded-lg border border-line bg-ink px-3 font-mono text-[13px] text-fg"
-          />
-          <label htmlFor="logInput" className="text-xs text-muted">git log output</label>
-          <textarea
-            id="logInput"
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            onDragOver={(e) => e.preventDefault()}
-            onDrop={(e) => {
-              e.preventDefault()
-              readFile(e.dataTransfer.files[0])
-            }}
-            spellCheck={false}
-            placeholder="@@d8c7f83…|35a41d6… ae3c4f1…|Dan Lim|2026-10-13T19:10…"
-            className="min-h-28 resize-y rounded-lg border border-line bg-ink px-3 py-2.5 font-mono text-xs text-fg"
-          />
-          {error && <p role="alert" className="m-0 whitespace-pre-line text-[13px] text-[#ff7b72]">{error}</p>}
-          <div className="flex flex-wrap gap-2">
-            <Button type="submit" variant="primary" className="min-h-11" disabled={!text.trim()}>
-              Visualize
-            </Button>
-            <label className="inline-flex min-h-11 cursor-pointer items-center rounded-lg border border-line bg-panel-2 px-4 font-semibold">
-              Open .txt…
+            <label className="press inline-flex min-h-9 cursor-pointer items-center rounded-lg border border-line-strong bg-panel-2 px-3.5 text-[13px] font-medium hover:bg-panel-3">
+              Open file…
               <input type="file" accept=".txt,.log,text/plain" hidden onChange={(e) => readFile(e.target.files[0])} />
             </label>
+            <Button type="submit" variant="primary" disabled={!text.trim()}>
+              {lines ? `Visualize ${lines} commits` : 'Visualize'}
+            </Button>
           </div>
-        </form>
-
-        {/* Local folder */}
-        <div className="flex flex-col gap-3.5 rounded-2xl border border-line bg-panel p-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3ddc97" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-              </svg>
-              <h2 className="m-0 text-[17px] font-semibold">Open a local folder</h2>
-            </div>
-            <SoonBadge />
-          </div>
-          <p className="m-0 text-soft">
-            Pick a folder that contains a <span className="font-mono text-[13px]">.git</span> directory. It will be read in your
-            browser and never uploaded.
-          </p>
-          <div className="flex min-h-[150px] flex-1 flex-col items-center justify-center gap-2 rounded-xl border-[1.5px] border-dashed border-[#3a4556] p-4 text-center text-muted">
-            Drop a repo folder here
-          </div>
-          <Button disabled className="min-h-11 self-start">Choose folder…</Button>
-        </div>
-
-        {/* GitHub */}
-        <div className="flex flex-col gap-3.5 rounded-2xl border border-line bg-panel p-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ff9f43" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <circle cx="6" cy="6" r="2.5" />
-                <circle cx="6" cy="18" r="2.5" />
-                <circle cx="18" cy="9" r="2.5" />
-                <path d="M6 8.5v7M18 11.5c0 3-4 3.5-9.5 5" />
-              </svg>
-              <h2 className="m-0 text-[17px] font-semibold">Connect a GitHub repo</h2>
-            </div>
-            <SoonBadge />
-          </div>
-          <p className="m-0 text-soft">
-            Adds pull requests, reviews and which branch each PR targets, such as <span className="font-mono text-[13px]">staging</span>.
-          </p>
-          <label htmlFor="ghRepo" className="text-xs text-muted">Repository</label>
-          <input
-            id="ghRepo"
-            disabled
-            placeholder="owner/repository"
-            className="min-h-11 rounded-lg border border-line bg-ink px-3 font-mono text-[13px] text-fg disabled:opacity-60"
-          />
-          <div className="flex-1" />
-          <Button disabled className="min-h-11 self-start">Connect with GitHub</Button>
-        </div>
-      </section>
+          {error && <p role="alert" className="m-0 whitespace-pre-line text-[13px] text-danger">{error}</p>}
+        </Step>
+      </form>
 
       <section aria-label="Loaded repository" className="flex flex-col gap-3">
         <SectionTitle>Loaded now</SectionTitle>
@@ -186,22 +115,25 @@ export default function LoadPage({ model, error, onLoad, onLoadSample, onOpenGra
             <button
               type="button"
               onClick={onOpenGraph}
-              className="flex flex-[1_1_360px] cursor-pointer flex-wrap items-center gap-4 rounded-xl border border-line bg-panel px-5 py-4 text-left"
+              className="press group flex flex-[1_1_360px] cursor-pointer items-center gap-4 rounded-xl border border-line bg-panel px-4 py-3.5 text-left hover:border-line-strong hover:bg-panel-2"
             >
-              <span className="grid size-9 place-items-center rounded-lg bg-panel-2"><Logo size={22} /></span>
+              <span className="grid size-9 flex-none place-items-center rounded-lg bg-panel-2 group-hover:bg-panel-3"><Logo size={20} /></span>
               <span className="min-w-0 flex-1">
-                <span className="block font-semibold">{model.name}</span>
-                <span className="block text-[13px] text-muted">
+                <span className="block truncate font-medium">{model.name}</span>
+                <span className="block text-xs tabular-nums text-muted">
                   {model.stats.commits} commits · {model.authorCount} authors · {model.branches.length} branches
                 </span>
               </span>
-              <span className="text-[13px] font-medium text-[#9db4ff]">Open graph →</span>
+              <span className="text-[13px] font-medium text-soft transition-transform duration-200 ease-out-strong group-hover:translate-x-0.5 group-hover:text-fg">
+                Open graph →
+              </span>
             </button>
           )}
-          <Button onClick={onLoadSample} className="min-h-[72px] flex-[0_1_220px] rounded-xl">
+          <Button onClick={onLoadSample} className="min-h-[66px] flex-[1_1_200px] rounded-xl sm:flex-[0_1_200px]">
             Load sample repo
           </Button>
         </div>
+        <p className="m-0 text-xs text-muted">Opening a local folder and connecting GitHub are planned.</p>
       </section>
     </main>
   )

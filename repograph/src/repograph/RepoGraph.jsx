@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Header from './components/Header.jsx'
 import { buildModel, defaultComparison } from './lib/git.js'
 import { SAMPLE_NAME, sampleLogText } from './lib/sample.js'
@@ -26,6 +26,11 @@ export default function RepoGraph() {
   const [selected, setSelected] = useState(null)
   const [comparison, setComparison] = useState(() => defaultComparison(model))
   const [error, setError] = useState('')
+
+  // each tab starts at its top, not wherever the previous tab was scrolled to
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [tab])
 
   const applyModel = (next) => {
     setModel(next)

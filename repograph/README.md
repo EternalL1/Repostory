@@ -7,12 +7,12 @@ Built with **React + Vite + Tailwind CSS v4**. No backend: everything runs in th
 
 | Tab | What it does |
 | --- | --- |
-| **Load repo** | Paste `git log` output or open it as a .txt file. Includes a built-in sample repo. |
+| **Load** | Paste `git log` output, drop or open it as a .txt file. Includes a built-in sample repo. |
 | **Graph** | Commit DAG with branch lanes. Search, filter by branch, highlight the longest path, graph stats, commit inspector. |
 | **Compare** | Pick branches A and B: merge-base (lowest common ancestor), commits ahead on each side, diverged or fast-forward. |
 | **Team** | Commits per author, weekday × hour heatmap, hotspot files and single owners, merge flow between branches. |
 
-The "Open a local folder" and "Connect GitHub" cards are placeholders marked *Coming soon*.
+Opening a local folder and connecting GitHub are planned.
 
 ## Run it
 
@@ -60,10 +60,10 @@ src/
    @import "tailwindcss";
    @import "./repograph/theme.css";
    ```
-3. Add the Google Fonts `<link>` from `index.html` (Inter, JetBrains Mono, Space Grotesk).
+3. Add the Google Fonts `<link>` from `index.html` (Inter, JetBrains Mono).
 4. Render `<RepoGraph />` on any page or route.
 
-The theme uses its own color names (`ink`, `panel`, `line`, `accent`, `branch-a`…). If your app already defines colors with those names, rename them in `theme.css` and in the components.
+The theme uses its own color names (`ink`, `panel`, `line`, `accent`, `branch-a`…) and adds two utilities, `press` (scale on press) and `material` (translucent header). If your app already defines colors with those names, rename them in `theme.css` and in the components.
 
 ### On Tailwind v3?
 
@@ -75,15 +75,16 @@ export default {
   theme: {
     extend: {
       colors: {
-        ink: '#0d1117', panel: '#161b22', 'panel-2': '#1c2330', line: '#2a3240',
-        fg: '#e6edf3', muted: '#8b97a7', soft: '#a9b4c2', subtle: '#c4ccd6',
-        accent: '#7c9cff', 'branch-a': '#4ea1ff', 'branch-b': '#ff9f43',
-        'merge-base': '#f5d547', path: '#3ddc97',
+        ink: '#0a0c0f', panel: '#111418', 'panel-2': '#171b21', 'panel-3': '#1d222a',
+        line: '#21262d', 'line-strong': '#30363f', 'line-hover': '#3d4550',
+        fg: '#eceef1', muted: '#7d8591', soft: '#a2a9b4', subtle: '#c5cad1',
+        accent: '#5e9eff', danger: '#ff7b72', merge: '#ff7eb6',
+        'branch-a': '#4ea1ff', 'branch-b': '#ff9f43', 'merge-base': '#f5d547', path: '#3ddc97',
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
         mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace'],
-        display: ['"Space Grotesk"', 'Inter', 'sans-serif'],
+        display: ['Inter', 'system-ui', 'sans-serif'],
       },
     },
   },

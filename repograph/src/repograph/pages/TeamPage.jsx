@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Card, SectionTitle } from '../components/ui.jsx'
 import { DAYS, formatDate } from '../lib/git.js'
-import { LANE_COLORS } from '../lib/theme.js'
+import { COL, LANE_COLORS } from '../lib/theme.js'
 import { teamStats } from '../lib/team.js'
 
 const pad2 = (n) => String(n).padStart(2, '0')
@@ -13,11 +13,11 @@ function hexToRgb(hex) {
 
 function Kpi({ label, value, sub, total, warn = false }) {
   return (
-    <Card className={warn ? 'border-branch-b' : ''}>
-      <div className="text-xs font-semibold uppercase tracking-[0.06em] text-muted">{label}</div>
-      <div className={`font-display text-[32px] font-bold ${warn ? 'text-branch-b' : ''}`}>
+    <Card className={warn ? 'border-branch-b/40' : ''}>
+      <SectionTitle as="div">{label}</SectionTitle>
+      <div className={`mt-1 text-[28px] font-semibold leading-tight tabular-nums tracking-[-0.02em] ${warn ? 'text-branch-b' : ''}`}>
         {value}
-        {total != null && <span className="ml-1.5 text-base font-medium text-muted">of {total}</span>}
+        {total != null && <span className="ml-1.5 text-sm font-normal tracking-normal text-muted">of {total}</span>}
       </div>
       <div className="text-[13px] text-soft">{sub}</div>
     </Card>
@@ -38,7 +38,7 @@ export default function TeamPage({ model }) {
     for (const t of team.times) if (!who || t.author === who) grid[t.day][t.hour]++
     return { grid, max: Math.max(1, ...grid.flat()) }
   }, [team, who])
-  const heatRgb = hexToRgb(who ? colorOf(who) : '#7c9cff')
+  const heatRgb = hexToRgb(who ? colorOf(who) : COL.accent)
 
   const maxCommits = team.authors[0]?.commits || 1
   const hot = team.hotspots.slice(0, 8)
@@ -46,15 +46,15 @@ export default function TeamPage({ model }) {
   const firstName = (n) => n.split(' ')[0]
 
   return (
-    <main className="flex flex-col gap-5 px-8 pb-10 pt-6">
+    <main className="flex flex-col gap-4 px-4 pb-10 pt-6 sm:px-8">
       <div>
-        <h1 className="m-0 font-display text-3xl font-bold">Team insights</h1>
-        <div className="text-muted">
+        <h1 className="m-0 text-2xl font-semibold tracking-[-0.02em]">Team insights</h1>
+        <div className="mt-1 text-[13px] text-muted">
           {formatDate(model.firstDate)} – {formatDate(model.lastDate, { year: true })} · all branches
         </div>
       </div>
 
-      <section aria-label="Key numbers" className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-4">
+      <section aria-label="Key numbers" className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-3">
         <Kpi
           label="Contributors"
           value={team.authors.length}
@@ -73,42 +73,42 @@ export default function TeamPage({ model }) {
         <Kpi label="Single-owner files" value={team.singleOwner} total={team.fileCount} sub="Only one person has touched them" warn={team.singleOwner > 0} />
       </section>
 
-      <div className="grid grid-cols-[repeat(auto-fit,minmax(440px,1fr))] gap-5">
-        <Card className="p-[18px]">
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(min(440px,100%),1fr))] gap-4">
+        <Card className="p-5">
           <SectionTitle className="mb-3.5">Commits by author</SectionTitle>
           <div className="flex flex-col gap-3.5">
             {team.authors.map((a) => (
               <div key={a.name} className="grid grid-cols-[130px_minmax(0,1fr)_40px] items-center gap-3">
                 <div className="min-w-0">
-                  <div className="truncate font-semibold">{a.name}</div>
+                  <div className="truncate text-[13px] font-medium">{a.name}</div>
                   <div className="text-xs text-muted">
                     {a.fileChanges} file changes · {a.merges} {a.merges === 1 ? 'merge' : 'merges'}
                   </div>
                 </div>
-                <div className="h-3.5 rounded bg-panel-2">
-                  <div className="h-3.5 rounded" style={{ width: `${(a.commits / maxCommits) * 100}%`, background: colorOf(a.name) }} />
+                <div className="h-2 rounded-full bg-panel-2">
+                  <div className="h-2 rounded-full" style={{ width: `${(a.commits / maxCommits) * 100}%`, background: colorOf(a.name) }} />
                 </div>
-                <div className="text-right font-semibold">{a.commits}</div>
+                <div className="text-right text-[13px] font-medium tabular-nums">{a.commits}</div>
               </div>
             ))}
           </div>
         </Card>
 
-        <Card className="p-[18px]">
+        <Card className="p-5">
           <div className="mb-3.5 flex flex-wrap items-center justify-between gap-2.5">
             <SectionTitle>When commits happen</SectionTitle>
             <div role="group" aria-label="Filter by author" className="flex flex-wrap gap-1.5">
               {[{ name: '', label: 'All' }, ...team.authors.map((a) => ({ name: a.name, label: firstName(a.name) }))].map((p) => {
                 const on = p.name === who
-                const c = p.name ? colorOf(p.name) : '#7c9cff'
+                const c = p.name ? colorOf(p.name) : COL.accent
                 return (
                   <button
                     key={p.label + p.name}
                     type="button"
                     aria-pressed={on}
                     onClick={() => setWho(p.name)}
-                    className="min-h-8 cursor-pointer rounded-full border px-3 text-xs font-semibold"
-                    style={{ background: on ? c : 'transparent', color: on ? '#0d1117' : '#c4ccd6', borderColor: on ? c : '#2a3240' }}
+                    className="press min-h-7 cursor-pointer rounded-full border px-3 text-xs font-medium"
+                    style={{ background: on ? c : 'transparent', color: on ? COL.ink : COL.subtle, borderColor: on ? c : COL.line }}
                   >
                     {p.label}
                   </button>
@@ -127,8 +127,8 @@ export default function TeamPage({ model }) {
                 <div
                   key={`${day}${h}`}
                   title={`${day} ${pad2(h)}:00 · ${v} commit${v === 1 ? '' : 's'}`}
-                  className="aspect-square rounded-[3px]"
-                  style={{ background: v ? `rgba(${heatRgb},${0.35 + (0.65 * v) / heat.max})` : '#1c2330' }}
+                  className="aspect-square rounded-[3px] transition-[background-color] duration-200"
+                  style={{ background: v ? `rgba(${heatRgb},${0.35 + (0.65 * v) / heat.max})` : COL.panel2 }}
                 />
               )),
             ])}
@@ -137,8 +137,8 @@ export default function TeamPage({ model }) {
         </Card>
       </div>
 
-      <div className="grid grid-cols-[repeat(auto-fit,minmax(440px,1fr))] gap-5">
-        <Card className="p-[18px]">
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(min(440px,100%),1fr))] gap-4">
+        <Card className="p-5">
           <SectionTitle className="mb-1">Hotspots</SectionTitle>
           <p className="mb-3 mt-0 text-[13px] text-soft">Files that change most often. They tend to attract bugs and merge conflicts.</p>
           {hot.length === 0 ? (
@@ -158,17 +158,17 @@ export default function TeamPage({ model }) {
                     const i = f.path.lastIndexOf('/')
                     const single = f.authors.length === 1
                     return (
-                      <tr key={f.path} className="border-b border-[#222a36]">
+                      <tr key={f.path} className="border-b border-line last:border-0">
                         <td className="max-w-0 truncate py-2 pr-3 font-mono text-xs" title={f.path}>
                           <span className="text-muted">{f.path.slice(0, i + 1)}</span>
                           {f.path.slice(i + 1)}
                         </td>
                         <td className="py-2">
                           <div className="flex items-center gap-2">
-                            <div className="h-2.5 flex-1 rounded-[3px] bg-panel-2">
-                              <div className="h-2.5 rounded-[3px] bg-branch-b" style={{ width: `${(f.changes / maxChanges) * 100}%` }} />
+                            <div className="h-1.5 flex-1 rounded-full bg-panel-2">
+                              <div className="h-1.5 rounded-full bg-branch-b" style={{ width: `${(f.changes / maxChanges) * 100}%` }} />
                             </div>
-                            <span className="w-4 text-xs">{f.changes}</span>
+                            <span className="w-5 text-right text-xs tabular-nums">{f.changes}</span>
                           </div>
                         </td>
                         <td className={`py-2 text-right text-xs ${single ? 'text-branch-b' : 'text-soft'}`}>
@@ -183,7 +183,7 @@ export default function TeamPage({ model }) {
           )}
         </Card>
 
-        <Card className="p-[18px]">
+        <Card className="p-5">
           <SectionTitle className="mb-1">How work flows between branches</SectionTitle>
           <p className="mb-4 mt-0 text-[13px] text-soft">Counted from merge commit messages.</p>
           {team.flows.length === 0 ? (
@@ -195,11 +195,11 @@ export default function TeamPage({ model }) {
                   <span className="rounded-lg border border-line px-3 py-1.5 font-mono text-xs">{f.from}</span>
                   <span className="flex items-center gap-1.5 text-xs text-muted">
                     <svg width="40" height="12" viewBox="0 0 40 12" aria-hidden="true">
-                      <path d="M0 6h34M29 1.5l5 4.5-5 4.5" stroke="#8b97a7" strokeWidth="1.6" fill="none" />
+                      <path d="M0 6h34M29 1.5l5 4.5-5 4.5" stroke={COL.muted} strokeWidth="1.6" fill="none" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                     {f.count}×
                   </span>
-                  <span className="rounded-lg border border-accent px-3 py-1.5 font-mono text-xs font-medium">{f.into}</span>
+                  <span className="rounded-lg border border-accent/50 px-3 py-1.5 font-mono text-xs font-medium">{f.into}</span>
                 </li>
               ))}
             </ul>
