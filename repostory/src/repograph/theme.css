@@ -1,4 +1,4 @@
-/* RepoGraph design tokens (Tailwind v4).
+/* Repostory design tokens (Tailwind v4).
    Gives you classes like bg-ink, bg-panel, border-line, text-muted, text-branch-a, font-mono, ease-out-strong.
    Import this right after `@import "tailwindcss";` in your main CSS file. */
 @theme static {

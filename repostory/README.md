@@ -1,4 +1,4 @@
-# RepoGraph
+# Repostory
 
 A frontend that shows a Git repository's history as a graph (a DAG), with a merge-base finder and team insights.
 Built with **React + Vite + Tailwind CSS v4**. No backend: everything runs in the browser.
@@ -11,6 +11,7 @@ Built with **React + Vite + Tailwind CSS v4**. No backend: everything runs in th
 | **Graph** | Commit DAG with branch lanes in an app shell: branch rail, graph, docked commit inspector. Search, filter by branch, highlight the longest path. `j` / `k` (or arrows) move the selection, `Esc` clears it. |
 | **Compare** | "Compare A with B" answers in one line: diverged at the merge-base (lowest common ancestor) or fast-forward, plus the commits only on each side. |
 | **Team** | Commits per author, weekday × hour heatmap, hotspot files and single owners, merge flow between branches. |
+| **Story** | A tap-through recap of the repo in full-screen slides, for flexing your work: commits, the contribution calendar, the greenest month, biggest day, longest streak (lit on the calendar), when the team works, top contributors, most-changed files. Ends on a poster you can save as a 1080×1920 PNG. |
 
 Opening a local folder and connecting GitHub are planned.
 
@@ -51,20 +52,22 @@ For big repos, add `-n 500` to load only the latest 500 commits.
 ```
 src/
   App.jsx                    renders <RepoGraph />
-  index.css                  Tailwind + RepoGraph theme
+  index.css                  Tailwind + Repostory theme
   repograph/
     RepoGraph.jsx            app shell: state, tabs, loading
     theme.css                Tailwind v4 @theme tokens (colors, fonts)
     lib/
       git.js                 parse git log, topological sort, lane layout, longest path, merge-base
       team.js                author / heatmap / hotspot / merge-flow stats
+      story.js, storyImage.js  Story numbers, summary poster drawn to PNG
       sample.js              fictional sample repo
       theme.js               lane + status colors for SVG
     components/
       CommitGraph.jsx        SVG graph + clickable commit rows
+      story/                 Story slides, pixel backdrops and avatars, motion
       Header.jsx, ui.jsx     shared UI pieces
     pages/
-      LoadPage.jsx  GraphPage.jsx  ComparePage.jsx  TeamPage.jsx
+      LoadPage.jsx  GraphPage.jsx  ComparePage.jsx  TeamPage.jsx  StoryPage.jsx
 ```
 
 ## Adding it to an existing React + Tailwind app

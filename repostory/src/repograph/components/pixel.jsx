@@ -1,4 +1,4 @@
-// Pixel-art icons: RepoGraph's visual signature. Each is drawn from a character map, one character per
+// Pixel-art icons: Repostory's visual signature. Each is drawn from a character map, one character per
 // pixel ('.' is empty), as crisp-edged SVG so the pixels stay sharp at any size and in both themes.
 
 export function Pixels({ map, colors, size }) {
@@ -13,7 +13,7 @@ export function Pixels({ map, colors, size }) {
   )
 }
 
-// RepoGraph mark: two commits on a main line (B blue, G green) and a branch stepping off to a pink commit (P)
+// Repostory mark: two commits on a main line (B blue, G green) and a branch stepping off to a pink commit (P)
 const LOGO = ['BBB......', 'BBB......', 'BBB......', '.BPP.....', '.B..PPPPP', '.B....PPP', 'GGG...PPP', 'GGG......', 'GGG......']
 const LOGO_COLORS = { B: 'var(--color-lane-0)', G: 'var(--color-lane-1)', P: 'var(--color-lane-2)' }
 

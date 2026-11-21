@@ -1,0 +1,65 @@
+/* Story motion: text rises in line by line (--d staggers it), backdrops settle in once, calendar squares pop in. */
+@keyframes story-rise {
+  from { opacity: 0; transform: translateY(14px); filter: blur(4px); }
+  to { opacity: 1; transform: none; filter: none; }
+}
+@keyframes story-pop {
+  0% { opacity: 0; transform: scale(0.6); }
+  60% { opacity: 1; transform: scale(1.06); }
+  100% { opacity: 1; transform: scale(1); }
+}
+@keyframes story-settle {
+  from { opacity: 0; transform: scale(1.12); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes story-cell {
+  from { opacity: 0; transform: scale(0.4); }
+}
+@keyframes story-grow {
+  from { transform: scaleY(0); }
+  to { transform: scaleY(1); }
+}
+
+.story-rise {
+  animation: story-rise 700ms var(--ease-out-strong) both;
+  animation-delay: var(--d, 0ms);
+}
+.story-pop {
+  animation: story-pop 650ms var(--ease-out-strong) both;
+  animation-delay: var(--d, 0ms);
+}
+.story-backdrop {
+  transform-origin: 50% 50%;
+  /* settles in once, then holds still: no endless slow loop behind the text */
+  animation: story-settle 900ms var(--ease-out-strong) both;
+}
+/* calendar squares pop in, column by column via --d */
+.story-cell {
+  animation: story-cell 420ms var(--ease-out-strong) both;
+  animation-delay: var(--d, 0ms);
+}
+.story-grow {
+  transform-origin: 50% 100%;
+  transform-box: fill-box;
+  animation: story-grow 700ms var(--ease-out-strong) both;
+  animation-delay: var(--d, 0ms);
+}
+.story-paused .story-backdrop,
+.story-paused .story-rise,
+.story-paused .story-pop,
+.story-paused .story-grow,
+.story-paused .story-cell {
+  animation-play-state: paused;
+}
+
+/* Reduced motion: the global rule shortens animations but keeps their delays, which would make items blink in
+   one by one. Here everything simply shows at once. */
+@media (prefers-reduced-motion: reduce) {
+  .story-rise,
+  .story-pop,
+  .story-cell,
+  .story-grow,
+  .story-backdrop {
+    animation-delay: 0ms !important;
+  }
+}

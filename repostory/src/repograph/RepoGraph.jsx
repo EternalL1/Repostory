@@ -5,6 +5,7 @@ import { SAMPLES } from './lib/samples.js'
 import ComparePage from './pages/ComparePage.jsx'
 import GraphPage from './pages/GraphPage.jsx'
 import LoadPage from './pages/LoadPage.jsx'
+import StoryPage from './pages/StoryPage.jsx'
 import TeamPage from './pages/TeamPage.jsx'
 
 const STORAGE_KEY = 'repograph.lastRepo'
@@ -26,7 +27,7 @@ function initialModel() {
   return sampleModel(DEFAULT_SAMPLE)
 }
 
-/** The whole RepoGraph app. Drop <RepoGraph /> anywhere in a React + Tailwind v4 app. */
+/** The whole Repostory app (component name RepoGraph). Drop <RepoGraph /> anywhere in a React + Tailwind v4 app. */
 export default function RepoGraph() {
   const [model, setModel] = useState(initialModel)
   const [tab, setTab] = useState('load')
@@ -94,6 +95,7 @@ export default function RepoGraph() {
       {tab === 'graph' && <GraphPage model={model} selected={selected} onSelect={setSelected} onSetCompare={setCompareSide} />}
       {tab === 'compare' && <ComparePage model={model} comparison={comparison} onChange={setComparison} />}
       {tab === 'team' && <TeamPage model={model} />}
+      {tab === 'story' && <StoryPage model={model} />}
     </div>
   )
 }

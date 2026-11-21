@@ -6,9 +6,10 @@ export const TABS = [
   { id: 'graph', label: 'Graph' },
   { id: 'compare', label: 'Compare' },
   { id: 'team', label: 'Team' },
+  { id: 'story', label: 'Story' },
 ]
 
-// RepoGraph's mark is pixel art (components/pixel.jsx)
+// Repostory's mark is pixel art (components/pixel.jsx)
 export const Logo = PixelLogo
 
 /** Segmented control: the active pill slides from the previous tab, so the change has a direction. */
@@ -157,7 +158,7 @@ export default function Header({ tab, onTab, model }) {
       <div className="flex flex-wrap items-center gap-x-6 gap-y-3 px-4 py-2.5 sm:px-8">
         <div className="flex items-center gap-2 text-base font-semibold">
           <Logo />
-          RepoGraph
+          Repostory
         </div>
         <Tabs tab={tab} onTab={onTab} />
         {model && (
