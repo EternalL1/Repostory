@@ -3,6 +3,7 @@ import CommitGraph from '../components/CommitGraph.jsx'
 import { GIT_LOG_COMMAND } from '../lib/git.js'
 import { SAMPLES } from '../lib/samples.js'
 import { Button, CopyButton, fieldClass } from '../components/ui.jsx'
+import { PixelClipboard, PixelTerminal } from '../components/pixel.jsx'
 
 /** "462 commits · 8 people", read straight from the generated text (cheaper than building each graph). */
 function sampleSize(text) {
@@ -47,8 +48,9 @@ export default function LoadPage({ model, error, onLoad, onLoadSample, onOpenGra
           }}
         >
           <div className="flex flex-col gap-2">
-            <h2 className="m-0 text-sm font-medium">
-              <span className="mr-2 tabular-nums text-muted">1</span>Run this in your repository
+            <h2 className="m-0 flex items-center gap-2 text-sm font-medium">
+              <PixelTerminal />
+              Run this in your repository
             </h2>
             <div className="flex items-center gap-2 rounded-lg border border-line-strong bg-panel py-1 pl-3 pr-1">
               <code className="min-w-0 flex-1 overflow-x-auto whitespace-nowrap py-1 font-mono text-xs text-subtle">{GIT_LOG_COMMAND}</code>
@@ -62,7 +64,7 @@ export default function LoadPage({ model, error, onLoad, onLoadSample, onOpenGra
           <div className="flex flex-col gap-2">
             <h2 className="m-0 text-sm font-medium">
               <label htmlFor="logInput">
-                <span className="mr-2 tabular-nums text-muted">2</span>Paste the output, or drop the file
+                <span className="inline-flex items-center gap-2"><PixelClipboard />Paste the output, or drop the file</span>
               </label>
             </h2>
             <div className="relative">

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import CommitGraph, { graphWidth } from '../components/CommitGraph.jsx'
 import { Button, CopyButton, Dot, HoverCard, Kbd, fieldClass } from '../components/ui.jsx'
 import { ancestors, formatDate, shortHash } from '../lib/git.js'
+import { PixelPointer } from '../components/pixel.jsx'
 import { COL, laneColor } from '../lib/theme.js'
 
 const isTyping = (el) => el && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName))
@@ -43,6 +44,7 @@ function Inspector({ model, commit, onGo, onSetCompare }) {
   if (!commit) {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-3 px-6 py-16 text-center">
+        <PixelPointer />
         <p className="m-0 text-sm text-muted">Pick a commit to see its parents, children and changed files.</p>
         <p className="m-0 flex items-center gap-1.5 text-xs text-muted">
           <Kbd>j</Kbd>

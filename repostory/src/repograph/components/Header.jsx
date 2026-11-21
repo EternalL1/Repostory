@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { COL } from '../lib/theme.js'
+import { PixelLogo } from './pixel.jsx'
 
 export const TABS = [
   { id: 'load', label: 'Load' },
@@ -8,16 +8,8 @@ export const TABS = [
   { id: 'team', label: 'Team' },
 ]
 
-export function Logo({ size = 22 }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 22 22" aria-hidden="true">
-      <path d="M5 3v16M5 8c0 4 12 2 12 7" style={{ stroke: COL.accent }} strokeWidth="2" strokeLinecap="round" fill="none" />
-      <circle cx="5" cy="4" r="2.6" style={{ fill: COL.accent }} />
-      <circle cx="5" cy="18" r="2.6" style={{ fill: COL.path }} />
-      <circle cx="17" cy="16" r="2.6" style={{ fill: COL.merge }} />
-    </svg>
-  )
-}
+// RepoGraph's mark is pixel art (components/pixel.jsx)
+export const Logo = PixelLogo
 
 /** Segmented control: the active pill slides from the previous tab, so the change has a direction. */
 function Tabs({ tab, onTab }) {
