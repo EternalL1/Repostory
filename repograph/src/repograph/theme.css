@@ -1,0 +1,22 @@
+/* RepoGraph design tokens (Tailwind v4).
+   Gives you classes like bg-ink, bg-panel, border-line, text-muted, text-branch-a, font-mono.
+   Import this right after `@import "tailwindcss";` in your main CSS file. */
+@theme {
+  --color-ink: #0d1117;
+  --color-panel: #161b22;
+  --color-panel-2: #1c2330;
+  --color-line: #2a3240;
+  --color-fg: #e6edf3;
+  --color-muted: #8b97a7;
+  --color-soft: #a9b4c2;
+  --color-subtle: #c4ccd6;
+  --color-accent: #7c9cff;
+  --color-branch-a: #4ea1ff;
+  --color-branch-b: #ff9f43;
+  --color-merge-base: #f5d547;
+  --color-path: #3ddc97;
+
+  --font-sans: "Inter", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --font-display: "Space Grotesk", "Inter", sans-serif;
+}
