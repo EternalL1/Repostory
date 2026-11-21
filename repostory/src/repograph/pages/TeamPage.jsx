@@ -1,9 +1,47 @@
 import { useMemo, useState } from 'react'
 import { DAYS, formatDate } from '../lib/git.js'
 import { COL, LANE_COLORS, tint } from '../lib/theme.js'
-import { teamStats } from '../lib/team.js'
+import { dayName, dayStats, teamStats } from '../lib/team.js'
 
 const pad2 = (n) => String(n).padStart(2, '0')
+
+// Pixel-art flame, one character per pixel: R red, O orange, Y yellow, W hot core.
+const FIRE = [
+  '...R....',
+  '...RR...',
+  '..RRR.R.',
+  '..RORRR.',
+  '.RROORR.',
+  '.ROOYORR',
+  'RROYYOOR',
+  'ROYYWYOR',
+  'ROYWWYOR',
+  '.ROYYOR.',
+  '..RRRR..',
+]
+const FIRE_COLORS = { R: '#e5482a', O: '#ff8a1f', Y: '#ffd23f', W: '#fff4b8' }
+
+function PixelFire({ size = 22 }) {
+  return (
+    <svg width={(size * 8) / 11} height={size} viewBox="0 0 8 11" shapeRendering="crispEdges" aria-hidden="true" className="flex-none">
+      {FIRE.flatMap((row, y) =>
+        [...row].map((ch, x) => (ch === '.' ? null : <rect key={`${x}-${y}`} x={x} y={y} width="1" height="1" fill={FIRE_COLORS[ch]} />)),
+      )}
+    </svg>
+  )
+}
+
+function DayFigure({ value, label, icon = null }) {
+  return (
+    <div className="min-w-0">
+      <div className="flex items-center gap-2 whitespace-nowrap text-xl font-semibold leading-tight tabular-nums sm:text-2xl">
+        {icon}
+        {value}
+      </div>
+      <div className="text-xs leading-snug text-muted">{label}</div>
+    </div>
+  )
+}
 const firstName = (n) => n.split(' ')[0]
 
 function Section({ title, note, aside, children }) {
@@ -42,6 +80,7 @@ export default function TeamPage({ model }) {
     return { grid, max: Math.max(1, ...grid.flat()) }
   }, [team, who])
   const heatColor = who ? colorOf(who) : COL.accent
+  const days = useMemo(() => dayStats(model, who), [model, who])
 
   const maxCommits = team.authors[0]?.commits || 1
   const hot = team.hotspots.slice(0, 8)
@@ -140,6 +179,16 @@ export default function TeamPage({ model }) {
                 />
               )),
             ])}
+          </div>
+          {/* lined up with the heatmap's cells, not its day labels */}
+          <div className="mt-6 grid grid-cols-3 gap-4 sm:pl-[35px]">
+            <DayFigure value={days.activeDays} label={days.activeDays === 1 ? 'day with commits' : 'days with commits'} />
+            <DayFigure
+              value={`${days.streak} ${days.streak === 1 ? 'day' : 'days'}`}
+              label="longest streak"
+              icon={days.streak > 1 ? <PixelFire /> : null}
+            />
+            {days.busiest && <DayFigure value={days.busiest.count} label={`busiest day, ${dayName(days.busiest.day)}`} />}
           </div>
         </Section>
 

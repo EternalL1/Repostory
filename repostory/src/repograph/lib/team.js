@@ -80,3 +80,39 @@ export function teamStats(model) {
     flows: [...flows.values()].sort((x, y) => y.count - x.count),
   }
 }
+
+const DAY_MS = 86_400_000
+const WEEKDAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+
+/** "Friday, Apr 24" for a calendar-day timestamp. */
+export const dayName = (t) => {
+  const d = new Date(t)
+  return `${WEEKDAY_NAMES[d.getUTCDay()]}, ${MONTH_NAMES[d.getUTCMonth()]} ${d.getUTCDate()}`
+}
+
+/**
+ * Per-calendar-day activity (each author's own date, no timezone shift), optionally for one author:
+ * days with commits, longest run of consecutive days with commits, and the busiest day.
+ */
+export function dayStats(model, who = '') {
+  const perDay = new Map()
+  for (const c of model.order) {
+    if (who && c.author !== who) continue
+    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(c.date || '')
+    if (!m) continue
+    const t = Date.UTC(+m[1], +m[2] - 1, +m[3])
+    perDay.set(t, (perDay.get(t) || 0) + 1)
+  }
+  const days = [...perDay.keys()].sort((a, b) => a - b)
+  let streak = 0
+  let run = 0
+  let busiest = null
+  days.forEach((t, i) => {
+    run = i && t - days[i - 1] === DAY_MS ? run + 1 : 1
+    streak = Math.max(streak, run)
+    const n = perDay.get(t)
+    if (!busiest || n > busiest.count) busiest = { day: t, count: n }
+  })
+  return { activeDays: days.length, streak, busiest }
+}
