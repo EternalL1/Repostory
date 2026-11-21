@@ -4,12 +4,12 @@ Tools for exploring the story behind a Git repository.
 
 ## RepoGraph
 
-[`repograph/`](repograph/) is a browser-only app that turns `git log` output into an interactive commit graph (DAG), with a merge-base finder and team insights. Built with React, Vite and Tailwind CSS v4.
+[`repostory/`](repostory/) is a browser-only app that turns `git log` output into an interactive commit graph (DAG), with a merge-base finder and team insights. Built with React, Vite and Tailwind CSS v4.
 
 ```bash
-cd repograph
+cd repostory
 npm install
 npm run dev
 ```
 
-See [`repograph/README.md`](repograph/README.md) for features, how to load your own repo, and the project structure.
+See [`repostory/README.md`](repostory/README.md) for features, how to load your own repo, and the project structure.
