@@ -4,24 +4,31 @@ import { COL, laneColor } from '../lib/theme.js'
 import { Badge, RefChip } from './ui.jsx'
 
 const ROW = 36 // px, matches h-9
-const LANE = 20
-const PAD = 16
+const LANE = 18
+const PAD = 14
+
+/** Width of the lane area for a model, so headers can line up with the rows. */
+export const graphWidth = (model) => PAD * 2 + LANE * model.laneCount
 
 /**
- * Draws the commit DAG (SVG lanes + clickable rows).
+ * Draws the commit DAG: an SVG of lanes behind full-width clickable rows.
  *
  * mode:       'normal' | 'compare' | 'longest'
  * comparison: result of compareCommits() (compare mode)
  * highlight:  Set of hashes to keep bright in normal mode (search / branch filter); others fade
- * focus:      { hash } — scrolls that row into view whenever the object changes
+ * focus:      { hash, instant? } — scrolls that row into view whenever the object changes
+ * compact:    number of rows to show, with hash + refs + message only (previews)
  */
-export default function CommitGraph({ model, selected, onSelect, mode = 'normal', comparison = null, highlight = null, focus = null }) {
+export default function CommitGraph({ model, selected, onSelect, mode = 'normal', comparison = null, highlight = null, focus = null, compact = 0 }) {
   const rowRefs = useRef(new Map())
 
   useEffect(() => {
     if (!focus) return
+    const row = rowRefs.current.get(focus.hash)
+    if (!row) return
+    // keyboard moves jump (never animate keyboard actions); clicks elsewhere glide to the row
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    rowRefs.current.get(focus.hash)?.scrollIntoView({ block: 'center', behavior: reduce ? 'auto' : 'smooth' })
+    row.scrollIntoView(focus.instant ? { block: 'nearest' } : { block: 'center', behavior: reduce ? 'auto' : 'smooth' })
   }, [focus])
 
   const statusOf = (c) => {
@@ -41,15 +48,16 @@ export default function CommitGraph({ model, selected, onSelect, mode = 'normal'
     return { color: dim ? COL.faded : laneColor(c.lane), dim }
   }
 
-  const { order, commits, laneCount } = model
-  const width = PAD * 2 + LANE * laneCount
+  const { commits } = model
+  const order = compact ? model.order.slice(0, compact) : model.order
+  const width = graphWidth(model)
   const height = order.length * ROW
   const x = (lane) => PAD + lane * LANE + LANE / 2
   const y = (row) => row * ROW + ROW / 2
 
   const edges = []
   const nodes = []
-  const status = new Map(order.map((c) => [c.hash, statusOf(c)]))
+  const status = new Map(model.order.map((c) => [c.hash, statusOf(c)]))
 
   for (const c of order) {
     c.parents.forEach((p, k) => {
@@ -75,14 +83,12 @@ export default function CommitGraph({ model, selected, onSelect, mode = 'normal'
       } else if (mode === 'longest') {
         if (model.longest.edges.has(`${c.hash}>${p}`)) {
           color = COL.path
-          strokeWidth = 3.5
+          strokeWidth = 3
         } else {
           color = COL.faded
-          opacity = 0.5
         }
       } else if (sc.dim || sp.dim) {
         color = COL.faded
-        opacity = 0.5
       }
       edges.push(<path key={`${c.hash}-${p}`} d={d} style={{ stroke: color }} strokeWidth={strokeWidth} fill="none" opacity={opacity} />)
     })
@@ -94,73 +100,81 @@ export default function CommitGraph({ model, selected, onSelect, mode = 'normal'
     const cy = y(c.row)
     const isMerge = c.parents.length > 1
     if (mode === 'compare' && s.kind === 'base') {
-      nodes.push(<circle key={`${c.hash}-base`} cx={cx} cy={cy} r="11" fill="none" style={{ stroke: COL.mergeBase }} strokeWidth="1.5" strokeDasharray="3 2" />)
+      nodes.push(<circle key={`${c.hash}-base`} cx={cx} cy={cy} r="10" fill="none" style={{ stroke: COL.mergeBase }} strokeWidth="1.5" strokeDasharray="3 2" />)
     }
     if (selected === c.hash) {
-      nodes.push(<circle key={`${c.hash}-sel`} cx={cx} cy={cy} r="10" fill="none" style={{ stroke: COL.fg }} strokeWidth="1.5" />)
+      nodes.push(<circle key={`${c.hash}-sel`} cx={cx} cy={cy} r="9" fill="none" style={{ stroke: s.color }} strokeWidth="1.5" opacity="0.6" />)
     }
     nodes.push(
       <circle
         key={c.hash}
         cx={cx}
         cy={cy}
-        r={isMerge ? 5.5 : 6}
+        r={isMerge ? 4.5 : 5}
         style={{ fill: isMerge ? COL.panel : s.color, stroke: isMerge ? s.color : 'none' }}
-        strokeWidth={isMerge ? 2.6 : 0}
-        opacity={s.dim ? 0.45 : 1}
-        className="cursor-pointer"
-        onClick={() => onSelect?.(c.hash)}
+        strokeWidth={isMerge ? 2.2 : 0}
       />,
     )
   }
 
-  const hashColor = (s) =>
-    s.kind === 'a' ? COL.a : s.kind === 'b' ? COL.b : s.kind === 'base' ? COL.mergeBase : COL.muted
+  const hashColor = (s) => (s.kind === 'a' ? COL.a : s.kind === 'b' ? COL.b : s.kind === 'base' ? COL.mergeBase : COL.muted)
 
   return (
-    <div className="overflow-x-auto">
-      <div className="flex min-w-[720px] py-1">
-        <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} className="block flex-none" aria-hidden="true">
-          {edges}
-          {nodes}
-        </svg>
-        <div className="min-w-0 flex-1">
-          {order.map((c) => {
-            const s = status.get(c.hash)
-            const isSelected = selected === c.hash
-            return (
-              <button
-                key={c.hash}
-                type="button"
-                ref={(el) => {
-                  if (el) rowRefs.current.set(c.hash, el)
-                  else rowRefs.current.delete(c.hash)
-                }}
-                onClick={() => onSelect?.(c.hash)}
-                aria-pressed={isSelected}
-                className={`flex h-9 w-full cursor-pointer items-center gap-2.5 rounded-md pr-4 text-left transition-[background-color,opacity] duration-150 hover:bg-fg/[0.04] ${
-                  isSelected ? 'bg-accent/[0.12] hover:bg-accent/[0.16]' : ''
-                } ${s.dim ? 'opacity-40' : ''}`}
-              >
-                <span className="w-16 flex-none font-mono text-xs" style={{ color: hashColor(s) }}>
-                  {shortHash(c.hash)}
-                </span>
-                {mode === 'compare' && s.kind === 'base' && (
-                  <Badge color={COL.mergeBase} solid>merge-base</Badge>
-                )}
-                {c.refs.map((r) => (
-                  <RefChip key={r.type + r.name} refInfo={r} lane={c.lane} />
-                ))}
-                <span className={`min-w-0 flex-1 truncate text-[13px] ${mode === 'compare' && s.kind === 'shared' ? 'text-soft' : ''}`}>
-                  {c.subject}
-                </span>
-                <span className="w-[100px] flex-none truncate text-xs text-muted">{c.author}</span>
-                <span className="w-[52px] flex-none text-right text-xs tabular-nums text-muted">{formatDate(c.date)}</span>
-              </button>
-            )
-          })}
-        </div>
-      </div>
+    <div className="relative" style={compact ? undefined : { minWidth: 640 }}>
+      <svg
+        width={width}
+        height={height}
+        viewBox={`0 0 ${width} ${height}`}
+        className="pointer-events-none absolute left-0 top-0 z-[1] block"
+        aria-hidden="true"
+      >
+        {edges}
+        {nodes}
+      </svg>
+      {order.map((c) => {
+        const s = status.get(c.hash)
+        const isSelected = selected === c.hash
+        return (
+          <button
+            key={c.hash}
+            type="button"
+            ref={(el) => {
+              if (el) rowRefs.current.set(c.hash, el)
+              else rowRefs.current.delete(c.hash)
+            }}
+            onClick={() => onSelect?.(c.hash)}
+            aria-pressed={onSelect ? isSelected : undefined}
+            aria-label={`${shortHash(c.hash)} ${c.subject}`}
+            tabIndex={onSelect ? 0 : -1}
+            style={{
+              paddingLeft: width,
+              boxShadow: isSelected ? `inset 2px 0 0 ${s.color}` : undefined,
+            }}
+            className={`flex h-9 w-full cursor-pointer items-center gap-3 pr-4 text-left transition-[background-color] duration-150 focus-visible:-outline-offset-2 ${
+              isSelected ? 'bg-accent/[0.09]' : 'hover:bg-fg/[0.045]'
+            }`}
+          >
+            <span className={`flex min-w-0 flex-1 items-center gap-3 ${s.dim ? 'opacity-35' : ''}`}>
+              <span className="w-[60px] flex-none font-mono text-xs" style={{ color: hashColor(s) }}>
+                {shortHash(c.hash)}
+              </span>
+              {mode === 'compare' && s.kind === 'base' && <Badge color={COL.mergeBase} solid>merge-base</Badge>}
+              {c.refs.map((r) => (
+                <RefChip key={r.type + r.name} refInfo={r} lane={c.lane} />
+              ))}
+              <span className={`min-w-0 flex-1 truncate text-sm ${mode === 'compare' && s.kind === 'shared' ? 'text-soft' : 'text-fg'}`}>
+                {c.subject}
+              </span>
+              {!compact && (
+                <>
+                  <span className="w-[104px] flex-none truncate text-xs text-muted max-md:hidden">{c.author}</span>
+                  <span className="w-[48px] flex-none text-right text-xs text-muted">{formatDate(c.date)}</span>
+                </>
+              )}
+            </span>
+          </button>
+        )
+      })}
     </div>
   )
 }

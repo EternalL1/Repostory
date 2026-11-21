@@ -9,10 +9,10 @@
   --color-line: #21262d;
   --color-line-strong: #30363f;
   --color-line-hover: #3d4550;
-  --color-fg: #eceef1;
+  --color-fg: #e6edf3;
   --color-subtle: #c5cad1;
   --color-soft: #a2a9b4;
-  --color-muted: #7d8591;
+  --color-muted: #9198a1;
   --color-accent: #5e9eff;
   --color-danger: #ff7b72;
   --color-merge: #ff7eb6;
@@ -34,9 +34,10 @@
   --color-lane-6: #a3e635;
   --color-lane-7: #e8a87c;
 
-  --font-sans: "Inter", system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, monospace;
-  --font-display: "Inter", system-ui, sans-serif;
+  /* Mona Sans + Monaspace Neon (bundled in main.jsx) so text looks the same on every OS;
+     the system stack (GitHub Primer's) is the fallback while they load or if they are not bundled. */
+  --font-sans: "Mona Sans Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+  --font-mono: "Monaspace Neon", ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
 
   --ease-out-strong: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-in-out-strong: cubic-bezier(0.77, 0, 0.175, 1);
@@ -47,7 +48,6 @@
     color-scheme: dark;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    font-optical-sizing: auto;
     -webkit-tap-highlight-color: transparent;
   }
 
@@ -73,10 +73,10 @@
     --color-line: #e2e5e9;
     --color-line-strong: #d2d7dd;
     --color-line-hover: #b9c0c8;
-    --color-fg: #11161c;
-    --color-subtle: #343b44;
-    --color-soft: #535c67;
-    --color-muted: #6b7480;
+    --color-fg: #1f2328;
+    --color-subtle: #31373e;
+    --color-soft: #4b535d;
+    --color-muted: #59636e;
     --color-accent: #0969da;
     --color-danger: #cf222e;
     --color-merge: #bf3989;
@@ -106,10 +106,10 @@
       --color-line: #e2e5e9;
       --color-line-strong: #d2d7dd;
       --color-line-hover: #b9c0c8;
-      --color-fg: #11161c;
-      --color-subtle: #343b44;
-      --color-soft: #535c67;
-      --color-muted: #6b7480;
+      --color-fg: #1f2328;
+      --color-subtle: #31373e;
+      --color-soft: #4b535d;
+      --color-muted: #59636e;
       --color-accent: #0969da;
       --color-danger: #cf222e;
       --color-merge: #bf3989;

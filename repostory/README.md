@@ -7,9 +7,9 @@ Built with **React + Vite + Tailwind CSS v4**. No backend: everything runs in th
 
 | Tab | What it does |
 | --- | --- |
-| **Load** | Paste `git log` output, drop or open it as a .txt file. Includes a built-in sample repo. |
-| **Graph** | Commit DAG with branch lanes. Search, filter by branch, highlight the longest path, graph stats, commit inspector. |
-| **Compare** | Pick branches A and B: merge-base (lowest common ancestor), commits ahead on each side, diverged or fast-forward. |
+| **Load** | Paste `git log` output, drop or open it as a .txt file, next to a live preview of the loaded graph. Includes a built-in sample repo. |
+| **Graph** | Commit DAG with branch lanes in an app shell: branch rail, graph, docked commit inspector. Search, filter by branch, highlight the longest path. `j` / `k` (or arrows) move the selection, `Esc` clears it. |
+| **Compare** | "Compare A with B" answers in one line: diverged at the merge-base (lowest common ancestor) or fast-forward, plus the commits only on each side. |
 | **Team** | Commits per author, weekday × hour heatmap, hotspot files and single owners, merge flow between branches. |
 
 Opening a local folder and connecting GitHub are planned.
@@ -60,7 +60,7 @@ src/
    @import "tailwindcss";
    @import "./repograph/theme.css";
    ```
-3. Add the Google Fonts `<link>` from `index.html` (Inter, JetBrains Mono).
+3. Install and import the fonts once (see `src/main.jsx`): `npm i @fontsource-variable/mona-sans @fontsource/monaspace-neon`. They are GitHub's open-source Mona Sans and Monaspace Neon (OFL), served from your own bundle. Without them the theme falls back to the system font stack.
 4. Render `<RepoGraph />` on any page or route.
 
 The theme uses its own color names (`ink`, `panel`, `line`, `accent`, `branch-a`…) and adds two utilities, `press` (scale on press) and `material` (translucent header). If your app already defines colors with those names, rename them in `theme.css` and in the components.
@@ -81,14 +81,13 @@ export default {
       colors: {
         ink: '#0a0c0f', panel: '#111418', 'panel-2': '#171b21', 'panel-3': '#1d222a',
         line: '#21262d', 'line-strong': '#30363f', 'line-hover': '#3d4550',
-        fg: '#eceef1', muted: '#7d8591', soft: '#a2a9b4', subtle: '#c5cad1',
+        fg: '#e6edf3', muted: '#9198a1', soft: '#a2a9b4', subtle: '#c5cad1',
         accent: '#5e9eff', danger: '#ff7b72', merge: '#ff7eb6',
         'branch-a': '#4ea1ff', 'branch-b': '#ff9f43', 'merge-base': '#f5d547', path: '#3ddc97',
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
-        mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace'],
-        display: ['Inter', 'system-ui', 'sans-serif'],
+        sans: ['"Mona Sans Variable"', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', '"Noto Sans"', 'Helvetica', 'Arial', 'sans-serif'],
+        mono: ['"Monaspace Neon"', 'ui-monospace', 'SFMono-Regular', '"SF Mono"', 'Menlo', 'Consolas', '"Liberation Mono"', 'monospace'],
       },
     },
   },

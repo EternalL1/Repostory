@@ -72,7 +72,17 @@ export default function RepoGraph() {
     <div className="min-h-screen bg-ink font-sans text-sm leading-normal text-fg">
       <Header tab={tab} onTab={setTab} model={model} />
       {tab === 'load' && (
-        <LoadPage model={model} error={error} onLoad={loadText} onLoadSample={loadSample} onOpenGraph={() => setTab('graph')} />
+        <LoadPage
+          model={model}
+          error={error}
+          isSample={model.name === SAMPLE_NAME}
+          onLoad={loadText}
+          onLoadSample={loadSample}
+          onOpenGraph={(hash) => {
+            if (hash) setSelected(hash)
+            setTab('graph')
+          }}
+        />
       )}
       {tab === 'graph' && <GraphPage model={model} selected={selected} onSelect={setSelected} onSetCompare={setCompareSide} />}
       {tab === 'compare' && <ComparePage model={model} comparison={comparison} onChange={setComparison} />}

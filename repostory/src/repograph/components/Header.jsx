@@ -59,7 +59,7 @@ function Tabs({ tab, onTab }) {
             type="button"
             aria-current={active ? 'page' : undefined}
             onClick={() => onTab(t.id)}
-            className={`relative min-h-8 cursor-pointer rounded-[7px] px-3.5 text-[13px] font-medium transition-colors duration-150 ${
+            className={`relative min-h-8 cursor-pointer rounded-[7px] px-3.5 text-sm font-medium transition-colors duration-150 ${
               active ? 'text-fg' : 'text-muted hover:text-subtle'
             }`}
           >
@@ -148,10 +148,22 @@ function ThemeToggle() {
 }
 
 export default function Header({ tab, onTab, model }) {
+  const ref = useRef(null)
+
+  // publish the header height so app-shell pages can fill exactly the rest of the window
+  useLayoutEffect(() => {
+    const el = ref.current
+    const set = () => document.documentElement.style.setProperty('--header-h', `${el.offsetHeight}px`)
+    set()
+    const ro = new ResizeObserver(set)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+
   return (
-    <header className="material sticky top-0 z-20 border-b border-line/70">
+    <header ref={ref} className="material sticky top-0 z-30 border-b border-line">
       <div className="flex flex-wrap items-center gap-x-6 gap-y-3 px-4 py-2.5 sm:px-8">
-        <div className="flex items-center gap-2 text-[15px] font-semibold tracking-[-0.01em]">
+        <div className="flex items-center gap-2 text-base font-semibold">
           <Logo />
           RepoGraph
         </div>
