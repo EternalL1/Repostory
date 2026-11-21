@@ -65,6 +65,10 @@ src/
 
 The theme uses its own color names (`ink`, `panel`, `line`, `accent`, `branch-a`…) and adds two utilities, `press` (scale on press) and `material` (translucent header). If your app already defines colors with those names, rename them in `theme.css` and in the components.
 
+### Light and dark
+
+The theme follows the OS setting. The button at the right of the header cycles **System → Light → Dark**, and a pick is saved in `localStorage` (`repograph.theme`). `theme.css` defines the dark values in `@theme static` and overrides them for light under `:root[data-theme="light"]` and `prefers-color-scheme: light`. Graph and author colors in `lib/theme.js` point at the same CSS variables, so they switch too. Copy the small inline script from `index.html` if you want a saved choice applied before first paint.
+
 ### On Tailwind v3?
 
 Skip `theme.css` and add the same tokens to `tailwind.config.js`:

@@ -1,7 +1,7 @@
 /* RepoGraph design tokens (Tailwind v4).
    Gives you classes like bg-ink, bg-panel, border-line, text-muted, text-branch-a, font-mono, ease-out-strong.
    Import this right after `@import "tailwindcss";` in your main CSS file. */
-@theme {
+@theme static {
   --color-ink: #0a0c0f;
   --color-panel: #111418;
   --color-panel-2: #171b21;
@@ -20,6 +20,19 @@
   --color-branch-b: #ff9f43;
   --color-merge-base: #f5d547;
   --color-path: #3ddc97;
+  --color-shared: #5b6472;
+  --color-faded: #2e343d;
+  --color-pill: #262c35;
+
+  /* graph lanes / author colors */
+  --color-lane-0: #5e9eff;
+  --color-lane-1: #3ddc97;
+  --color-lane-2: #ff7eb6;
+  --color-lane-3: #f5a524;
+  --color-lane-4: #56d4e8;
+  --color-lane-5: #ff6b6b;
+  --color-lane-6: #a3e635;
+  --color-lane-7: #e8a87c;
 
   --font-sans: "Inter", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
@@ -46,6 +59,76 @@
 
   ::selection {
     background: color-mix(in srgb, var(--color-accent) 35%, transparent);
+  }
+}
+
+/* Light theme: follows the OS unless the viewer picked one (data-theme="light" | "dark" on <html>). */
+@layer base {
+  :root[data-theme="light"] {
+    color-scheme: light;
+    --color-ink: #f5f6f8;
+    --color-panel: #ffffff;
+    --color-panel-2: #f0f2f4;
+    --color-panel-3: #e7eaee;
+    --color-line: #e2e5e9;
+    --color-line-strong: #d2d7dd;
+    --color-line-hover: #b9c0c8;
+    --color-fg: #11161c;
+    --color-subtle: #343b44;
+    --color-soft: #535c67;
+    --color-muted: #6b7480;
+    --color-accent: #0969da;
+    --color-danger: #cf222e;
+    --color-merge: #bf3989;
+    --color-branch-a: #0969da;
+    --color-branch-b: #c2410c;
+    --color-merge-base: #9a6700;
+    --color-path: #1a7f37;
+    --color-shared: #8c959f;
+    --color-faded: #d0d7de;
+    --color-pill: #ffffff;
+    --color-lane-0: #0969da;
+    --color-lane-1: #1a7f37;
+    --color-lane-2: #bf3989;
+    --color-lane-3: #9a6700;
+    --color-lane-4: #0e7f8f;
+    --color-lane-5: #cf222e;
+    --color-lane-6: #4d7c0f;
+    --color-lane-7: #b35900;
+  }
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) {
+      color-scheme: light;
+      --color-ink: #f5f6f8;
+      --color-panel: #ffffff;
+      --color-panel-2: #f0f2f4;
+      --color-panel-3: #e7eaee;
+      --color-line: #e2e5e9;
+      --color-line-strong: #d2d7dd;
+      --color-line-hover: #b9c0c8;
+      --color-fg: #11161c;
+      --color-subtle: #343b44;
+      --color-soft: #535c67;
+      --color-muted: #6b7480;
+      --color-accent: #0969da;
+      --color-danger: #cf222e;
+      --color-merge: #bf3989;
+      --color-branch-a: #0969da;
+      --color-branch-b: #c2410c;
+      --color-merge-base: #9a6700;
+      --color-path: #1a7f37;
+      --color-shared: #8c959f;
+      --color-faded: #d0d7de;
+      --color-pill: #ffffff;
+      --color-lane-0: #0969da;
+      --color-lane-1: #1a7f37;
+      --color-lane-2: #bf3989;
+      --color-lane-3: #9a6700;
+      --color-lane-4: #0e7f8f;
+      --color-lane-5: #cf222e;
+      --color-lane-6: #4d7c0f;
+      --color-lane-7: #b35900;
+    }
   }
 }
 

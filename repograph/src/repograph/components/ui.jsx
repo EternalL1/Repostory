@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { laneColor } from '../lib/theme.js'
+import { laneColor, tint } from '../lib/theme.js'
 
 export function Card({ as: Tag = 'section', className = '', children, ...props }) {
   return (
@@ -18,7 +18,7 @@ export function Dot({ color, className = '' }) {
 }
 
 const buttonStyles = {
-  primary: 'bg-fg text-ink hover:bg-white',
+  primary: 'bg-fg text-ink hover:bg-fg/85',
   secondary: 'border border-line-strong bg-panel-2 text-fg hover:border-line-hover hover:bg-panel-3',
   ghost: 'text-soft hover:bg-panel-2 hover:text-fg',
   a: 'bg-branch-a text-ink hover:brightness-110',
@@ -40,7 +40,7 @@ export function Badge({ color, solid = false, className = '', children }) {
   return (
     <span
       className={`inline-flex flex-none items-center rounded-full px-2 text-[11px] font-medium leading-[18px] ${className}`}
-      style={solid ? { background: color, color: 'var(--color-ink)' } : { color, boxShadow: `inset 0 0 0 1px color-mix(in srgb, ${color} 35%, transparent)` }}
+      style={solid ? { background: color, color: 'var(--color-ink)' } : { color, boxShadow: `inset 0 0 0 1px ${tint(color, 40)}` }}
     >
       {children}
     </span>

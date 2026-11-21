@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { COL } from '../lib/theme.js'
 
 export const TABS = [
@@ -11,10 +11,10 @@ export const TABS = [
 export function Logo({ size = 22 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 22 22" aria-hidden="true">
-      <path d="M5 3v16M5 8c0 4 12 2 12 7" stroke={COL.accent} strokeWidth="2" strokeLinecap="round" fill="none" />
-      <circle cx="5" cy="4" r="2.6" fill={COL.accent} />
-      <circle cx="5" cy="18" r="2.6" fill={COL.path} />
-      <circle cx="17" cy="16" r="2.6" fill={COL.merge} />
+      <path d="M5 3v16M5 8c0 4 12 2 12 7" style={{ stroke: COL.accent }} strokeWidth="2" strokeLinecap="round" fill="none" />
+      <circle cx="5" cy="4" r="2.6" style={{ fill: COL.accent }} />
+      <circle cx="5" cy="18" r="2.6" style={{ fill: COL.path }} />
+      <circle cx="17" cy="16" r="2.6" style={{ fill: COL.merge }} />
     </svg>
   )
 }
@@ -40,11 +40,11 @@ function Tabs({ tab, onTab }) {
   if (pill) measured.current = true
 
   return (
-    <nav aria-label="Main" className="relative flex rounded-[10px] bg-panel-2 p-[3px]">
+    <nav aria-label="Main" className="relative flex rounded-[10px] bg-panel-2 p-[3px] max-sm:order-2">
       {pill && (
         <span
           aria-hidden="true"
-          className={`absolute inset-y-[3px] left-0 rounded-[7px] bg-[#262c35] shadow-[0_1px_2px_rgba(0,0,0,0.4),inset_0_0_0_1px_rgba(255,255,255,0.06)] ${
+          className={`absolute inset-y-[3px] left-0 rounded-[7px] bg-pill shadow-[0_1px_2px_rgba(0,0,0,0.18),inset_0_0_0_1px_color-mix(in_srgb,var(--color-fg)_8%,transparent)] ${
             animate ? 'transition-[transform,width] duration-200 ease-out-strong' : ''
           }`}
           style={{ width: pill.w, transform: `translateX(${pill.x}px)` }}
@@ -71,9 +71,85 @@ function Tabs({ tab, onTab }) {
   )
 }
 
+const THEME_KEY = 'repograph.theme'
+const THEMES = ['system', 'light', 'dark']
+const THEME_LABEL = { system: 'System', light: 'Light', dark: 'Dark' }
+
+const ThemeIcons = {
+  system: (
+    <>
+      <rect x="3" y="4" width="18" height="12" rx="2" />
+      <path d="M8 20h8M12 16v4" />
+    </>
+  ),
+  light: (
+    <>
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4" />
+    </>
+  ),
+  dark: <path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z" />,
+}
+
+function readTheme() {
+  try {
+    const t = localStorage.getItem(THEME_KEY)
+    return THEMES.includes(t) ? t : 'system'
+  } catch {
+    return 'system'
+  }
+}
+
+/** Cycles System → Light → Dark. "System" follows the OS; a pick is remembered on this device. */
+function ThemeToggle() {
+  const [theme, setTheme] = useState(readTheme)
+
+  useEffect(() => {
+    const root = document.documentElement
+    if (theme === 'system') delete root.dataset.theme
+    else root.dataset.theme = theme
+    try {
+      if (theme === 'system') localStorage.removeItem(THEME_KEY)
+      else localStorage.setItem(THEME_KEY, theme)
+    } catch {
+      /* storage unavailable: the choice lasts for this visit */
+    }
+  }, [theme])
+
+  const next = THEMES[(THEMES.indexOf(theme) + 1) % THEMES.length]
+  const layer = 'col-start-1 row-start-1 transition-[opacity,filter,transform] duration-200 ease-out-strong'
+  return (
+    <button
+      type="button"
+      onClick={() => setTheme(next)}
+      aria-label={`Theme: ${THEME_LABEL[theme]}. Switch to ${THEME_LABEL[next]}`}
+      title={`Theme: ${THEME_LABEL[theme]}`}
+      className="press grid size-8 flex-none cursor-pointer place-items-center rounded-lg text-muted hover:bg-panel-2 hover:text-fg"
+    >
+      {THEMES.map((t) => (
+        <svg
+          key={t}
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+          className={`${layer} ${t === theme ? '' : 'scale-75 opacity-0 blur-[2px]'}`}
+        >
+          {ThemeIcons[t]}
+        </svg>
+      ))}
+    </button>
+  )
+}
+
 export default function Header({ tab, onTab, model }) {
   return (
-    <header className="material sticky top-0 z-20 border-b border-white/[0.06]">
+    <header className="material sticky top-0 z-20 border-b border-line/70">
       <div className="flex flex-wrap items-center gap-x-6 gap-y-3 px-4 py-2.5 sm:px-8">
         <div className="flex items-center gap-2 text-[15px] font-semibold tracking-[-0.01em]">
           <Logo />
@@ -81,7 +157,7 @@ export default function Header({ tab, onTab, model }) {
         </div>
         <Tabs tab={tab} onTab={onTab} />
         {model && (
-          <div className="ml-auto flex min-w-0 items-center gap-2 text-xs text-muted">
+          <div className="ml-auto flex min-w-0 items-center gap-2 text-xs text-muted max-sm:order-last max-sm:ml-0 max-sm:basis-full">
             <span className="truncate font-mono text-subtle">{model.name}</span>
             <span aria-hidden="true">·</span>
             <span className="whitespace-nowrap tabular-nums">{model.stats.commits} commits</span>
@@ -91,6 +167,9 @@ export default function Header({ tab, onTab, model }) {
             </span>
           </div>
         )}
+        <div className="max-sm:order-1 max-sm:ml-auto">
+          <ThemeToggle />
+        </div>
       </div>
     </header>
   )

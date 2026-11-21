@@ -84,7 +84,7 @@ export default function CommitGraph({ model, selected, onSelect, mode = 'normal'
         color = COL.faded
         opacity = 0.5
       }
-      edges.push(<path key={`${c.hash}-${p}`} d={d} stroke={color} strokeWidth={strokeWidth} fill="none" opacity={opacity} />)
+      edges.push(<path key={`${c.hash}-${p}`} d={d} style={{ stroke: color }} strokeWidth={strokeWidth} fill="none" opacity={opacity} />)
     })
   }
 
@@ -94,10 +94,10 @@ export default function CommitGraph({ model, selected, onSelect, mode = 'normal'
     const cy = y(c.row)
     const isMerge = c.parents.length > 1
     if (mode === 'compare' && s.kind === 'base') {
-      nodes.push(<circle key={`${c.hash}-base`} cx={cx} cy={cy} r="11" fill="none" stroke={COL.mergeBase} strokeWidth="1.5" strokeDasharray="3 2" />)
+      nodes.push(<circle key={`${c.hash}-base`} cx={cx} cy={cy} r="11" fill="none" style={{ stroke: COL.mergeBase }} strokeWidth="1.5" strokeDasharray="3 2" />)
     }
     if (selected === c.hash) {
-      nodes.push(<circle key={`${c.hash}-sel`} cx={cx} cy={cy} r="10" fill="none" stroke={COL.fg} strokeWidth="1.5" />)
+      nodes.push(<circle key={`${c.hash}-sel`} cx={cx} cy={cy} r="10" fill="none" style={{ stroke: COL.fg }} strokeWidth="1.5" />)
     }
     nodes.push(
       <circle
@@ -105,8 +105,7 @@ export default function CommitGraph({ model, selected, onSelect, mode = 'normal'
         cx={cx}
         cy={cy}
         r={isMerge ? 5.5 : 6}
-        fill={isMerge ? COL.panel : s.color}
-        stroke={isMerge ? s.color : 'none'}
+        style={{ fill: isMerge ? COL.panel : s.color, stroke: isMerge ? s.color : 'none' }}
         strokeWidth={isMerge ? 2.6 : 0}
         opacity={s.dim ? 0.45 : 1}
         className="cursor-pointer"
@@ -139,7 +138,7 @@ export default function CommitGraph({ model, selected, onSelect, mode = 'normal'
                 }}
                 onClick={() => onSelect?.(c.hash)}
                 aria-pressed={isSelected}
-                className={`flex h-9 w-full cursor-pointer items-center gap-2.5 rounded-md pr-4 text-left transition-[background-color,opacity] duration-150 hover:bg-white/[0.04] ${
+                className={`flex h-9 w-full cursor-pointer items-center gap-2.5 rounded-md pr-4 text-left transition-[background-color,opacity] duration-150 hover:bg-fg/[0.04] ${
                   isSelected ? 'bg-accent/[0.12] hover:bg-accent/[0.16]' : ''
                 } ${s.dim ? 'opacity-40' : ''}`}
               >

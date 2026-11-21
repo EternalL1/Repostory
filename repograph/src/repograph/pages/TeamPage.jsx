@@ -1,15 +1,10 @@
 import { useMemo, useState } from 'react'
 import { Card, SectionTitle } from '../components/ui.jsx'
 import { DAYS, formatDate } from '../lib/git.js'
-import { COL, LANE_COLORS } from '../lib/theme.js'
+import { COL, LANE_COLORS, tint } from '../lib/theme.js'
 import { teamStats } from '../lib/team.js'
 
 const pad2 = (n) => String(n).padStart(2, '0')
-
-function hexToRgb(hex) {
-  const n = parseInt(hex.slice(1), 16)
-  return `${(n >> 16) & 255},${(n >> 8) & 255},${n & 255}`
-}
 
 function Kpi({ label, value, sub, total, warn = false }) {
   return (
@@ -38,7 +33,7 @@ export default function TeamPage({ model }) {
     for (const t of team.times) if (!who || t.author === who) grid[t.day][t.hour]++
     return { grid, max: Math.max(1, ...grid.flat()) }
   }, [team, who])
-  const heatRgb = hexToRgb(who ? colorOf(who) : COL.accent)
+  const heatColor = who ? colorOf(who) : COL.accent
 
   const maxCommits = team.authors[0]?.commits || 1
   const hot = team.hotspots.slice(0, 8)
@@ -128,7 +123,7 @@ export default function TeamPage({ model }) {
                   key={`${day}${h}`}
                   title={`${day} ${pad2(h)}:00 · ${v} commit${v === 1 ? '' : 's'}`}
                   className="aspect-square rounded-[3px] transition-[background-color] duration-200"
-                  style={{ background: v ? `rgba(${heatRgb},${0.35 + (0.65 * v) / heat.max})` : COL.panel2 }}
+                  style={{ background: v ? tint(heatColor, Math.round(35 + (65 * v) / heat.max)) : COL.panel2 }}
                 />
               )),
             ])}
@@ -195,7 +190,7 @@ export default function TeamPage({ model }) {
                   <span className="rounded-lg border border-line px-3 py-1.5 font-mono text-xs">{f.from}</span>
                   <span className="flex items-center gap-1.5 text-xs text-muted">
                     <svg width="40" height="12" viewBox="0 0 40 12" aria-hidden="true">
-                      <path d="M0 6h34M29 1.5l5 4.5-5 4.5" stroke={COL.muted} strokeWidth="1.6" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                      <path d="M0 6h34M29 1.5l5 4.5-5 4.5" style={{ stroke: COL.muted }} strokeWidth="1.6" fill="none" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                     {f.count}×
                   </span>
