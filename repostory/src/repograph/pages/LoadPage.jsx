@@ -32,7 +32,7 @@ export default function LoadPage({ model, error, onLoad, onLoadSample, onOpenGra
       <section>
         <p className="m-0 mb-3 font-mono text-xs text-path">git log → graph</p>
         <h1 className="m-0 text-[clamp(2rem,5vw,2.75rem)] font-semibold leading-[1.08] tracking-[-0.025em]">
-          See how your repository really grew.
+          See how your repository grew.
         </h1>
         <p className="mb-0 mt-4 max-w-[560px] text-[15px] leading-relaxed text-soft">
           RepoGraph turns commit history into a graph you can read: where branches split, how far they drifted, and who works on
