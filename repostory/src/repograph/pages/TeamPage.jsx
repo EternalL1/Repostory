@@ -5,7 +5,20 @@ import { dayName, dayStats, teamStats } from '../lib/team.js'
 
 const pad2 = (n) => String(n).padStart(2, '0')
 
-// Pixel-art flame, one character per pixel: R red, O orange, Y yellow, W hot core.
+// Pixel-art icons, one character per pixel ('.' is empty).
+function Pixels({ map, colors, size }) {
+  const w = map[0].length
+  const h = map.length
+  return (
+    <svg width={(size * w) / h} height={size} viewBox={`0 0 ${w} ${h}`} shapeRendering="crispEdges" aria-hidden="true" className="flex-none">
+      {map.flatMap((row, y) =>
+        [...row].map((ch, x) => (colors[ch] ? <rect key={`${x}-${y}`} x={x} y={y} width="1" height="1" fill={colors[ch]} /> : null)),
+      )}
+    </svg>
+  )
+}
+
+// Flame for the streak: R red, O orange, Y yellow, W hot core
 const FIRE = [
   '...R....',
   '...RR...',
@@ -21,15 +34,17 @@ const FIRE = [
 ]
 const FIRE_COLORS = { R: '#e5482a', O: '#ff8a1f', Y: '#ffd23f', W: '#fff4b8' }
 
-function PixelFire({ size = 22 }) {
-  return (
-    <svg width={(size * 8) / 11} height={size} viewBox="0 0 8 11" shapeRendering="crispEdges" aria-hidden="true" className="flex-none">
-      {FIRE.flatMap((row, y) =>
-        [...row].map((ch, x) => (ch === '.' ? null : <rect key={`${x}-${y}`} x={x} y={y} width="1" height="1" fill={FIRE_COLORS[ch]} />)),
-      )}
-    </svg>
-  )
-}
+// Calendar page with green active days, the heatmap in miniature: L outline, R header, W page, G active day
+const CALENDAR = ['.L.....L.', 'RRRRRRRRR', 'RRRRRRRRR', 'LWWWWWWWL', 'LWGWGWGWL', 'LWWWWWWWL', 'LWGWWWGWL', 'LWWWWWWWL', 'LLLLLLLLL']
+const CALENDAR_COLORS = { L: '#7d8591', R: '#e5482a', W: '#eef1f4', G: '#2fbf71' }
+
+// Lightning bolt for the busiest day, a spike of activity: Y yellow, O shade
+const BOLT = ['...YYO', '..YYO.', '.YYO..', 'YYYYYO', '...YO.', '..YO..', '.YO...', 'YO....']
+const BOLT_COLORS = { Y: '#ffd23f', O: '#e09a00' }
+
+const PixelFire = () => <Pixels map={FIRE} colors={FIRE_COLORS} size={22} />
+const PixelCalendar = () => <Pixels map={CALENDAR} colors={CALENDAR_COLORS} size={20} />
+const PixelBolt = () => <Pixels map={BOLT} colors={BOLT_COLORS} size={20} />
 
 function DayFigure({ value, label, icon = null }) {
   return (
@@ -182,13 +197,13 @@ export default function TeamPage({ model }) {
           </div>
           {/* lined up with the heatmap's cells, not its day labels */}
           <div className="mt-6 grid grid-cols-3 gap-4 sm:pl-[35px]">
-            <DayFigure value={days.activeDays} label={days.activeDays === 1 ? 'day with commits' : 'days with commits'} />
+            <DayFigure value={days.activeDays} label={days.activeDays === 1 ? 'day with commits' : 'days with commits'} icon={<PixelCalendar />} />
             <DayFigure
               value={`${days.streak} ${days.streak === 1 ? 'day' : 'days'}`}
               label="longest streak"
               icon={days.streak > 1 ? <PixelFire /> : null}
             />
-            {days.busiest && <DayFigure value={days.busiest.count} label={`busiest day, ${dayName(days.busiest.day)}`} />}
+            {days.busiest && <DayFigure value={days.busiest.count} label={`busiest day, ${dayName(days.busiest.day)}`} icon={<PixelBolt />} />}
           </div>
         </Section>
 
