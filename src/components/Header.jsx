@@ -64,7 +64,7 @@ function Tabs({ tab, onTab }) {
   )
 }
 
-const THEME_KEY = 'repograph.theme'
+const THEME_KEY = 'repograph.theme' // earlier app name, kept so saved choices survive
 const THEMES = ['system', 'light', 'dark']
 const THEME_LABEL = { system: 'System', light: 'Light', dark: 'Dark' }
 

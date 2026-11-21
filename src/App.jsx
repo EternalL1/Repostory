@@ -8,6 +8,7 @@ import LoadPage from './pages/LoadPage.jsx'
 import StoryPage from './pages/StoryPage.jsx'
 import TeamPage from './pages/TeamPage.jsx'
 
+// keys keep the app's earlier name on purpose: renaming them would wipe every visitor's saved repo and theme
 const STORAGE_KEY = 'repograph.lastRepo'
 const DEFAULT_SAMPLE = 'storefront'
 
@@ -27,8 +28,8 @@ function initialModel() {
   return sampleModel(DEFAULT_SAMPLE)
 }
 
-/** The whole Repostory app (component name RepoGraph). Drop <RepoGraph /> anywhere in a React + Tailwind v4 app. */
-export default function RepoGraph() {
+/** The whole Repostory app: tabs, the loaded repository, and every page. */
+export default function App() {
   const [model, setModel] = useState(initialModel)
   const [tab, setTab] = useState('load')
   const [selected, setSelected] = useState(null)

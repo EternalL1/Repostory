@@ -1,5 +1,5 @@
 @import "tailwindcss";
-@import "./repograph/theme.css";
+@import "./theme.css";
 
 body {
   margin: 0;
