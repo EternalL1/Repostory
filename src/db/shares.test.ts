@@ -1,14 +1,16 @@
-import { readFileSync } from 'node:fs'
+import { readdirSync, readFileSync } from 'node:fs'
 import { PGlite } from '@electric-sql/pglite'
 import { drizzle } from 'drizzle-orm/pglite'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { GET as cleanup } from '../app/api/cron/cleanup-shares/route'
 import { DELETE } from '../app/api/shares/[slug]/route'
+import { POST as kpiEvent } from '../app/kpi/event/route'
 import { POST } from '../app/api/shares/route'
 import { buildModel } from '../lib/git'
 import { SAMPLES } from '../lib/samples'
 import { storyStats, toSnapshot } from '../lib/story'
 import { deleteExpiredShares, deleteShare, getShare, MAX_SHARE_BYTES, MAX_SHARES_PER_HOUR, saveShare, SHARE_TTL_DAYS, SharesBusyError } from './shares'
+import { countEvent, eventCounts, EVENTS } from './events'
 import { type Db, setTestDb } from './index'
 import * as schema from './schema'
 import { parseSnapshot, type Snapshot } from './snapshot'
@@ -20,8 +22,14 @@ const statsOf = (id: string) => {
 const valid = (id = 'android') => parseSnapshot(statsOf(id)) as Snapshot
 const DAY = 86_400_000
 const memory = () => (globalThis as { __repostoryShares?: Map<string, { version: number }> }).__repostoryShares!
-// the real migration, so the tests check the SQL that production runs
-const MIGRATION = readFileSync(new URL('../../drizzle/0000_shares.sql', import.meta.url), 'utf8').replaceAll('--> statement-breakpoint', '')
+// the real migrations, in order, so the tests check the SQL that production runs
+const DRIZZLE = new URL('../../drizzle/', import.meta.url)
+const MIGRATION = readdirSync(DRIZZLE)
+  .filter((f) => f.endsWith('.sql'))
+  .sort()
+  .map((f) => readFileSync(new URL(f, DRIZZLE), 'utf8').replaceAll('--> statement-breakpoint', ''))
+  .join('\n')
+const eventMemory = () => (globalThis as { __repostoryEvents?: Map<string, number> }).__repostoryEvents
 
 describe('parseSnapshot', () => {
   it('accepts every sample Story after a JSON round trip, under the size limit', () => {
@@ -99,7 +107,8 @@ describe.each(['memory', 'postgres'] as const)('with the %s store', (backend) =>
   })
   beforeEach(async () => {
     memory().clear()
-    await pg?.exec('DELETE FROM shares')
+    eventMemory()?.clear()
+    await pg?.exec('DELETE FROM shares; DELETE FROM daily_events')
   })
 
   const exists = async (slug: string) =>
@@ -217,6 +226,37 @@ describe.each(['memory', 'postgres'] as const)('with the %s store', (backend) =>
       } finally {
         delete process.env.CRON_SECRET
       }
+    })
+  })
+
+  describe('product counts', () => {
+    const today = new Date().toISOString().slice(0, 10)
+    const send = (body: string) => kpiEvent(new Request('http://x/kpi/event', { method: 'POST', body }))
+
+    it('adds up per UTC day and event', async () => {
+      const d1 = new Date('2026-11-27T23:59:00Z')
+      const d2 = new Date('2026-11-28T00:01:00Z')
+      await countEvent('load_paste', d1)
+      await countEvent('load_paste', d1)
+      await countEvent('load_paste', d2)
+      await countEvent('story_finished', d2)
+      const rows = (await eventCounts('2026-11-27')).map((r) => `${r.day} ${r.event} ${r.count}`).sort()
+      expect(rows).toEqual(['2026-11-27 load_paste 2', '2026-11-28 load_paste 1', '2026-11-28 story_finished 1'])
+      expect(await eventCounts('2026-11-28')).toHaveLength(2)
+    })
+
+    it('counts only known event names, from the route', async () => {
+      expect((await send(JSON.stringify({ event: 'load_github' }))).status).toBe(204)
+      expect((await send(JSON.stringify({ event: 'drop table' }))).status).toBe(400)
+      expect((await send('not json')).status).toBe(400)
+      expect((await send(JSON.stringify({ event: 'load_github', pad: 'x'.repeat(300) }))).status).toBe(400)
+      expect(await eventCounts(today)).toEqual([{ day: today, event: 'load_github', count: 1 }])
+      expect(EVENTS).toContain('share_created')
+    })
+
+    it('counts a share link when one is saved', async () => {
+      await POST(new Request('http://x/api/shares', { method: 'POST', body: JSON.stringify(statsOf('android')) }))
+      expect(await eventCounts(today)).toEqual([{ day: today, event: 'share_created', count: 1 }])
     })
   })
 })

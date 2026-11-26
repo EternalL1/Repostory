@@ -1,4 +1,5 @@
 import { MAX_SHARE_BYTES, saveShare, SharesBusyError } from '../../../db/shares'
+import { countEvent } from '../../../db/events'
 import { parseSnapshot } from '../../../db/snapshot'
 
 /**
@@ -21,7 +22,9 @@ export async function POST(request: Request) {
   if (typeof stats === 'string') return Response.json({ error: stats }, { status: 400 })
 
   try {
-    return Response.json(await saveShare(stats), { status: 201 })
+    const saved = await saveShare(stats)
+    await countEvent('share_created').catch((e) => console.error('kpi: count failed', e))
+    return Response.json(saved, { status: 201 })
   } catch (e) {
     if (e instanceof SharesBusyError) {
       return Response.json({ error: 'Lots of links are being made right now. Try again in a few minutes.' }, { status: 429, headers: { 'retry-after': '600' } })

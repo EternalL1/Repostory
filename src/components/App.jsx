@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import Header from './Header'
 import { buildModel, defaultComparison } from '../lib/git'
+import { count } from '../lib/kpi'
 import { SAMPLES } from '../lib/samples'
 import ComparePage from '../tabs/ComparePage'
 import GraphPage from '../tabs/GraphPage'
@@ -66,6 +67,7 @@ export default function App() {
         /* storage full or unavailable: still works for this session */
       }
       applyModel(next)
+      count(next.source === 'github' ? 'load_github' : 'load_paste')
     } catch (e) {
       setError(e.message)
     }
@@ -79,6 +81,7 @@ export default function App() {
       /* ignore */
     }
     applyModel(sampleModel(id))
+    count('load_sample')
   }
 
   const setCompareSide = (side, hash) => {

@@ -63,6 +63,8 @@ Histories of any size work: 50,000 commits load in about 0.3 s. For 100,000+ com
 - Share links expire after a year. Whoever made one can delete it from its page in the same browser.
 - Visits are counted with Vercel Web Analytics: page views, referrers and rough location, without cookies. Nothing
   from a loaded repository is sent to it.
+- Product moments are counted as daily totals in Repostory's own database: a repository loaded (sample, pasted log or
+  GitHub link), a Story finished, a link shared. Only the event's name and the day are stored.
 
 ## Run it locally
 
@@ -81,6 +83,7 @@ npm run dev      # http://localhost:5173
 | `npm run build` / `npm start` | Production build, and serving it on port 5173 |
 | `npm run db:generate` | Write a SQL migration from `src/db/schema.ts` into `drizzle/` |
 | `npm run db:migrate` | Apply migrations to the database in `DATABASE_URL` (reads `.env.local`, uses the direct connection) |
+| `npm run kpis` | The KPIs from the production database: this week against last (see [KPIs](#kpis)) |
 
 Every push and pull request runs the typecheck, the tests and a production build on GitHub Actions
 (`.github/workflows/ci.yml`); a failure shows as a red ✗ on the commit.
@@ -152,6 +155,22 @@ take about 1 s for small repositories, 3 s for mid-size ones, 7–15 s for the l
   when a link is deleted.
 - When the Story's shape changes, bump `SNAPSHOT_VERSION` and teach `getShare` to read older rows.
 
+## KPIs
+
+The main KPI is **shares created per week**: people found their Story worth showing. `npm run kpis` prints it with the
+funnel behind it (own repository loaded → Story finished → shared), this week against last, from `daily_events`:
+
+| Event | Counted when |
+| --- | --- |
+| `load_sample`, `load_paste`, `load_github` | A repository is loaded on the Load tab |
+| `story_finished`, `shared_story_finished` | The Story reaches its last slide, on the Story tab or a shared link's page |
+| `share_created` | The server saves a share link |
+
+The browser sends an event's name to `POST /kpi/event`, outside `/api/` so it never uses up a visitor's rate limit there;
+unknown names are refused. Only the live site counts: previews share its database. Traffic, referrers and views of
+shared links (`/w/…` pages) are in Vercel → Analytics; custom events there need the Pro plan, which is why these
+counts live in Postgres.
+
 ## Tests
 
 `npm test` runs about 80 Vitest tests:
@@ -160,14 +179,16 @@ take about 1 s for small repositories, 3 s for mid-size ones, 7–15 s for the l
 | --- | --- |
 | `src/lib/git.test.ts` | Parsing, topological order, lanes, longest path, merge-bases (including criss-cross merges), compare |
 | `src/lib/story.test.ts` | The calendar rebuilt from daily counts matches the original exactly (samples, 15 and 30 years), layouts by length, share round trips, file labels |
-| `src/db/shares.test.ts` | The snapshot schema, and the share store and API run twice: in memory and on PGlite (Postgres in process) with the real migration. Expiry, the hourly cap, the cron's secret check |
+| `src/db/shares.test.ts` | The snapshot schema, and the share store, product counts and their routes, run twice: in memory and on PGlite (Postgres in process) with the real migrations. Expiry, the hourly cap, the cron's secret check |
 | `src/lib/github.test.ts` | Link parsing, a fake GitHub (branches, tags, paging, the limit, the one-wave cursor and its fallback), `.mailmap`, errors |
 
 ## Project structure
 
 ```
 vercel.json, next.config.ts, drizzle.config.ts, package.json, .mailmap
-drizzle/                     SQL migrations for the shares table
+.github/workflows/ci.yml     typecheck, tests and build on every push
+scripts/kpis.mjs             npm run kpis
+drizzle/                     SQL migrations (shares, daily_events)
 src/
   app/
     layout.tsx               fonts, theme script, metadata
@@ -175,6 +196,7 @@ src/
     api/github/              a public GitHub repository as git log text
     api/shares/              create a share link; DELETE /api/shares/[slug] with its key
     api/cron/cleanup-shares/ daily: deletes expired share links
+    kpi/event/               counts one product event (outside /api/ and its rate limit)
     w/[slug]/                a shared Story: page + opengraph-image (the preview card)
     globals.css              Tailwind + the theme
   theme.css                  Tailwind v4 tokens (colors, fonts), light and dark
@@ -182,6 +204,7 @@ src/
     schema.ts, index.ts      Drizzle schema and the Neon client
     snapshot.ts              the schema every shared Story must pass, and its version
     shares.ts                save, read, delete and expire shared Stories
+    events.ts                daily product counts behind the KPIs
   lib/
     git.ts                   parse git log, topological order, lanes, longest path, merge-base
     github.ts                read a GitHub repository into git log text; .mailmap
@@ -189,6 +212,7 @@ src/
     story.ts                 Story numbers, the calendar (daily counts → grid), share snapshots
     storyImage.ts            the Story poster, drawn to a 1080×1920 PNG
     shareTokens.ts           delete keys for the share links this browser made
+    kpi.ts                   sends a product event from the browser
     samples.ts, sample.ts    fictional sample repositories (seeded generators + a hand-written one)
     theme.ts                 lane and status colors for SVG, as CSS variables
   components/

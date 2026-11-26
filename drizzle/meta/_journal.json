@@ -8,6 +8,13 @@
       "when": 1795668902456,
       "tag": "0000_shares",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1795710199839,
+      "tag": "0001_daily_events",
+      "breakpoints": true
     }
   ]
 }

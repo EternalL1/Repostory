@@ -4,6 +4,7 @@ import { Backdrop } from '../components/story/art'
 import { slidesFor, StoryHold, StoryPaused, Summary } from '../components/story/slides'
 import { Button, CopyButton, fieldClass } from '../components/ui'
 import { storyStats, toSnapshot } from '../lib/story'
+import { count } from '../lib/kpi'
 import { deleteLink, rememberToken } from '../lib/shareTokens'
 import { savePoster } from '../lib/storyImage'
 
@@ -40,7 +41,7 @@ function SlideView({ slide, stats }) {
 }
 
 /** Full-screen story player: auto-advances, tap right/left to move, hold to pause, arrows and Esc on a keyboard. */
-function StoryPlayer({ stats, onClose }) {
+function StoryPlayer({ stats, onClose, shared = false }) {
   const slides = useMemo(() => slidesFor(stats), [stats])
   const [index, setIndex] = useState(0)
   const [paused, setPaused] = useState(false)
@@ -54,6 +55,14 @@ function StoryPlayer({ stats, onClose }) {
   const press = useRef(null)
   const dialog = useRef(null)
   const last = index === slides.length - 1
+
+  // a KPI: the Story reached its last slide (once per time it's opened)
+  const finished = useRef(false)
+  useEffect(() => {
+    if (!last || finished.current) return
+    finished.current = true
+    count(shared ? 'shared_story_finished' : 'story_finished')
+  }, [last, shared])
 
   const go = useCallback(
     (to) => {
@@ -393,7 +402,7 @@ export function StoryView({ stats, shared = false }) {
         </span>
       </button>
 
-      {open && <StoryPlayer stats={stats} onClose={() => setOpen(false)} />}
+      {open && <StoryPlayer stats={stats} shared={shared} onClose={() => setOpen(false)} />}
     </main>
   )
 }
