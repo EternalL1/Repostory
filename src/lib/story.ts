@@ -48,21 +48,42 @@ function leveler(counts: number[]): (n: number) => number {
   return (n: number) => (n <= 0 ? 0 : n <= q1 ? 1 : n <= q2 ? 2 : n <= q3 ? 3 : 4)
 }
 
-/**
- * The contribution calendar, per calendar day in each author's own date: weeks × weekdays (Sunday on top),
- * the longest run of days with commits, and the greenest month laid out as its own small calendar.
- */
 export type Streak = { len: number; from: number | null; to: number | null }
 export type CalendarCell = { t: number; n: number; level: number; out: boolean }
 export type MonthCell = { t: number; n: number; level: number; date: number }
 
-export function calendar(model: Model) {
+/** Commits per calendar day (each author's own date), from the first day with a commit to the last. */
+export type DailyCounts = { start: number; counts: number[] }
+
+export function dailyCounts(model: Model): DailyCounts | null {
   const perDay = new Map<number, number>()
   for (const c of model.order) {
     if (!/^\d{4}-\d{2}-\d{2}/.test(c.date || '')) continue
     const t = dayTs(c.date)
     perDay.set(t, (perDay.get(t) || 0) + 1)
   }
+  if (!perDay.size) return null
+  let first = Infinity
+  let last = -Infinity
+  for (const t of perDay.keys()) {
+    if (t < first) first = t
+    if (t > last) last = t
+  }
+  const counts = Array.from({ length: Math.round((last - first) / DAY_MS) + 1 }, (_, i) => perDay.get(first + i * DAY_MS) || 0)
+  return { start: first, counts }
+}
+
+/**
+ * The contribution calendar, built from daily counts: weeks × weekdays (Sunday on top), the longest run of days with
+ * commits, and the greenest month laid out as its own small calendar. A shared Story stores only the counts and
+ * rebuilds this, so the two must stay the same function.
+ */
+export function calendarFrom(daily: DailyCounts | null) {
+  if (!daily) return null
+  const perDay = new Map<number, number>()
+  daily.counts.forEach((n, i) => {
+    if (n > 0) perDay.set(daily.start + i * DAY_MS, n)
+  })
   const days = [...perDay.keys()].sort((a, b) => a - b)
   if (!days.length) return null
   const first = days[0]
@@ -99,7 +120,8 @@ export function calendar(model: Model) {
     m.active++
     perMonth.set(key, m)
   }
-  const top = [...perMonth.values()].sort((a, b) => b.commits - a.commits || b.active - a.active)[0]
+  // most commits, then most active days, then the more recent month (what commit order used to decide)
+  const top = [...perMonth.values()].sort((a, b) => b.commits - a.commits || b.active - a.active || b.key - a.key)[0]
   const y = Math.floor(top.key / 12)
   const mo = top.key % 12
   const monthFirst = Date.UTC(y, mo, 1)
@@ -129,6 +151,17 @@ export function calendar(model: Model) {
   }
 }
 
+/** The calendar for a loaded repository. */
+export const calendar = (model: Model) => calendarFrom(dailyCounts(model))
+
+/** How the Calendar and Streak slides draw it: the original strip when it fits, else a scrolling strip, else year rows. */
+export const ROWS_FROM_YEARS = 3
+export type CalendarLayout = 'fit' | 'strip' | 'rows'
+export function calendarLayout(cal: { weeks: unknown[]; spanDays: number }): CalendarLayout {
+  if (cal.weeks.length <= 53) return 'fit'
+  return cal.spanDays > ROWS_FROM_YEARS * 366 ? 'rows' : 'strip'
+}
+
 export const fmt = (n: number) => n.toLocaleString('en-US')
 
 /** Everything the Story's slides show, in one object. */
@@ -136,6 +169,7 @@ export function storyStats(model: Model) {
   const team = teamStats(model)
   const days = dayStats(model)
   const commits = model.order.length
+  const daily = dailyCounts(model)
 
   const hours: number[] = Array(24).fill(0)
   const weekdays: number[] = Array(7).fill(0)
@@ -208,9 +242,18 @@ export function storyStats(model: Model) {
     branches: model.branches.length,
     tags: model.tags.length,
     flow: team.flows.length ? team.flows[0] : null,
-    cal: calendar(model),
+    daily,
+    cal: calendarFrom(daily),
   }
 }
 
 /** What a Story is drawn from, and what a shared link stores. */
 export type StoryStats = ReturnType<typeof storyStats>
+
+/** What a share link stores: the Story without the expanded calendar, which is rebuilt from `daily` on the way out. */
+export type StorySnapshot = Omit<StoryStats, 'cal'>
+export function toSnapshot(stats: StoryStats): StorySnapshot {
+  const { cal: _cal, ...rest } = stats
+  return rest
+}
+export const fromSnapshot = (snap: StorySnapshot): StoryStats => ({ ...snap, cal: calendarFrom(snap.daily) })

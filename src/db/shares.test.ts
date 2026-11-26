@@ -7,7 +7,7 @@ import { DELETE } from '../app/api/shares/[slug]/route'
 import { POST } from '../app/api/shares/route'
 import { buildModel } from '../lib/git'
 import { SAMPLES } from '../lib/samples'
-import { storyStats } from '../lib/story'
+import { storyStats, toSnapshot } from '../lib/story'
 import { deleteExpiredShares, deleteShare, getShare, MAX_SHARE_BYTES, MAX_SHARES_PER_HOUR, saveShare, SHARE_TTL_DAYS, SharesBusyError } from './shares'
 import { type Db, setTestDb } from './index'
 import * as schema from './schema'
@@ -15,7 +15,7 @@ import { parseSnapshot, type Snapshot } from './snapshot'
 
 const statsOf = (id: string) => {
   const s = SAMPLES.find((x) => x.id === id)!
-  return JSON.parse(JSON.stringify(storyStats(buildModel(s.text(), s.name))))
+  return JSON.parse(JSON.stringify(toSnapshot(storyStats(buildModel(s.text(), s.name)))))
 }
 const valid = (id = 'android') => parseSnapshot(statsOf(id)) as Snapshot
 const DAY = 86_400_000
@@ -30,6 +30,18 @@ describe('parseSnapshot', () => {
       expect(JSON.stringify(stats).length).toBeLessThan(MAX_SHARE_BYTES)
       expect(parseSnapshot(stats)).toEqual(stats)
     }
+  })
+
+  it('fits a 30-year history in a few KB: one count per day', () => {
+    const counts = Array.from({ length: Math.round(30 * 365.25) }, (_, i) => (i % 5 ? (i * 7) % 6 : 0))
+    const input = { ...statsOf('android'), daily: { start: Date.UTC(1996, 10, 26), counts } }
+    expect(JSON.stringify(input).length).toBeLessThan(40_000)
+    expect(typeof parseSnapshot(input)).toBe('object')
+  })
+
+  it('drops the expanded calendar if a client sends one', () => {
+    const input = { ...statsOf('android'), cal: { weeks: [] } }
+    expect(parseSnapshot(input)).not.toHaveProperty('cal')
   })
 
   it('drops keys the Story does not read, at any depth', () => {
@@ -60,9 +72,12 @@ describe('parseSnapshot', () => {
     const name = statsOf('android')
     name.top[0].name = 12345
     expect(parseSnapshot(name)).toMatch(/^Invalid top\.0\.name/)
-    const week = statsOf('android')
-    week.cal.weeks[0].pop()
-    expect(parseSnapshot(week)).toMatch(/^Invalid cal\.weeks\.0/)
+    const day = statsOf('android')
+    day.daily.counts[3] = -1
+    expect(parseSnapshot(day)).toMatch(/^Invalid daily\.counts\.3/)
+    const start = statsOf('android')
+    start.daily.start += 3_600_000
+    expect(parseSnapshot(start)).toMatch(/^Invalid daily\.start: must be a calendar day/)
     expect(parseSnapshot({ ...statsOf('android'), commits: 0 })).toMatch(/^Invalid commits/)
     expect(parseSnapshot(null)).toMatch(/^Invalid the Story/)
   })

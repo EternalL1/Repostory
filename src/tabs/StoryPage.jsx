@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import '../components/story/story.css'
 import { Backdrop } from '../components/story/art'
-import { slidesFor, StoryPaused, Summary } from '../components/story/slides'
+import { slidesFor, StoryHold, StoryPaused, Summary } from '../components/story/slides'
 import { Button, CopyButton, fieldClass } from '../components/ui'
-import { storyStats } from '../lib/story'
+import { storyStats, toSnapshot } from '../lib/story'
 import { deleteLink, rememberToken } from '../lib/shareTokens'
 import { savePoster } from '../lib/storyImage'
 
@@ -45,6 +45,9 @@ function StoryPlayer({ stats, onClose }) {
   const [index, setIndex] = useState(0)
   const [paused, setPaused] = useState(false)
   const [held, setHeld] = useState(false)
+  // > 0 while the viewer scrolls something on the slide (the calendar); holds the Story like a press does
+  const [exploring, setExploring] = useState(0)
+  const hold = useCallback((on) => setExploring((n) => Math.max(0, n + (on ? 1 : -1))), [])
   const [saving, setSaving] = useState(false)
   const bars = useRef([])
   const progress = useRef(0)
@@ -57,6 +60,7 @@ function StoryPlayer({ stats, onClose }) {
       if (to < 0) to = 0
       if (to >= slides.length) return
       progress.current = 0
+      setExploring(0)
       setIndex(to)
     },
     [slides.length],
@@ -69,7 +73,7 @@ function StoryPlayer({ stats, onClose }) {
     const tick = (now) => {
       const dt = now - prev
       prev = now
-      if (!paused && !held && !last) progress.current = Math.min(1, progress.current + dt / (slides[index].duration || DURATION))
+      if (!paused && !held && !exploring && !last) progress.current = Math.min(1, progress.current + dt / (slides[index].duration || DURATION))
       if (last) progress.current = 1
       bars.current.forEach((el, i) => {
         if (el) el.style.transform = `scaleX(${i < index ? 1 : i > index ? 0 : progress.current})`
@@ -79,7 +83,7 @@ function StoryPlayer({ stats, onClose }) {
     }
     raf = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(raf)
-  }, [index, paused, held, last, go, slides])
+  }, [index, paused, held, exploring, last, go, slides])
 
   useEffect(() => {
     const onKey = (e) => {
@@ -158,7 +162,7 @@ function StoryPlayer({ stats, onClose }) {
         aria-modal="true"
         aria-label={`${stats.name} story`}
         tabIndex={-1}
-        className={`relative h-dvh w-screen touch-manipulation select-none overflow-hidden font-sans outline-none sm:aspect-[9/16] sm:h-[min(92dvh,880px)] sm:w-auto sm:rounded-[22px] sm:shadow-[0_30px_80px_rgba(0,0,0,0.6)] ${paused || held ? 'story-paused' : ''}`}
+        className={`relative h-dvh w-screen touch-manipulation select-none overflow-hidden font-sans outline-none sm:aspect-[9/16] sm:h-[min(92dvh,880px)] sm:w-auto sm:rounded-[22px] sm:shadow-[0_30px_80px_rgba(0,0,0,0.6)] ${paused || held || exploring ? 'story-paused' : ''}`}
         style={{ containerType: 'size' }}
         onPointerDown={onPointerDown}
         onPointerUp={onPointerUp}
@@ -166,8 +170,10 @@ function StoryPlayer({ stats, onClose }) {
         onPointerLeave={onPointerCancel}
         onContextMenu={(e) => e.preventDefault()}
       >
-        <StoryPaused.Provider value={paused || held}>
-          <SlideView key={slide.id} slide={slide} stats={stats} />
+        <StoryPaused.Provider value={paused || held || exploring > 0}>
+          <StoryHold.Provider value={hold}>
+            <SlideView key={slide.id} slide={slide} stats={stats} />
+          </StoryHold.Provider>
         </StoryPaused.Provider>
 
         {/* chrome: progress, logo, pause, close. Fades while held so the slide can be read. */}
@@ -225,7 +231,7 @@ function SharePanel({ stats, onClose }) {
   const create = async () => {
     setState({ status: 'saving' })
     try {
-      const res = await fetch('/api/shares', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(stats) })
+      const res = await fetch('/api/shares', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(toSnapshot(stats)) })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) throw new Error(data.error || 'Could not create the link.')
       rememberToken(data.slug, data.deleteToken)

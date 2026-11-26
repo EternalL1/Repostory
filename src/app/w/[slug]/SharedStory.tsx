@@ -1,10 +1,10 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { PixelLogo as Logo } from '../../../components/pixel'
 import { Button } from '../../../components/ui'
 import { deleteLink, tokenFor } from '../../../lib/shareTokens'
-import type { StoryStats } from '../../../lib/story'
+import { fromSnapshot, type StorySnapshot } from '../../../lib/story'
 import { StoryView } from '../../../tabs/StoryPage'
 
 const formatDay = (iso: string) => new Date(iso).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' })
@@ -13,7 +13,9 @@ const formatDay = (iso: string) => new Date(iso).toLocaleDateString('en-US', { y
  * A shared Story, read-only: the same landing and player as the Story tab, without the loaded repo around it.
  * The browser that made the link also sees a way to delete it.
  */
-export default function SharedStory({ slug, stats, expiresAt }: { slug: string; stats: StoryStats; expiresAt: string }) {
+export default function SharedStory({ slug, snapshot, expiresAt }: { slug: string; snapshot: StorySnapshot; expiresAt: string }) {
+  // the share carries daily counts only (a few KB even for decades); the calendar grid is rebuilt here
+  const stats = useMemo(() => fromSnapshot(snapshot), [snapshot])
   const [mine, setMine] = useState(false)
   const [state, setState] = useState<{ status: 'shown' | 'deleting' | 'deleted'; message?: string }>({ status: 'shown' })
 

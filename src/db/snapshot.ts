@@ -2,15 +2,14 @@
 // our domain, so every string from the user's repo (repo name, people, paths, branches) has a hard length limit, and
 // everything Repostory itself words (persona, weekday, month) must be one of its own values.
 import { z } from 'zod'
-import type { StoryStats } from '../lib/story'
+import type { StorySnapshot } from '../lib/story'
 
-/** Bump when StoryStats changes shape; getShare upgrades or refuses older rows. */
+/** Bump when StorySnapshot changes shape; getShare upgrades or refuses older rows. */
 export const SNAPSHOT_VERSION = 1
 
 const count = z.number().int().nonnegative().max(1e9)
 const ts = z.number().int().nonnegative() // a calendar day as epoch ms
 const ratio = z.number().min(0).max(1)
-const level = z.number().int().min(0).max(4)
 const text = (max: number) => z.string().max(max)
 const months = z.array(count).length(12)
 
@@ -18,19 +17,11 @@ const PERSONAS = ['Night Owl', 'Early Bird', 'Morning Maker', 'Daytime Shipper',
 const WEEKDAYS = ['Sundays', 'Mondays', 'Tuesdays', 'Wednesdays', 'Thursdays', 'Fridays', 'Saturdays'] as const
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'] as const
 
-const calendar = z.object({
-  weeks: z.array(z.array(z.object({ t: ts, n: count, level, out: z.boolean() })).length(7)).max(1200),
-  activeDays: count,
-  spanDays: count,
-  streak: z.object({ len: count, from: ts.nullable(), to: ts.nullable() }),
-  month: z.object({
-    name: z.enum(MONTHS),
-    year: z.number().int().min(1970).max(2200),
-    commits: count,
-    active: count,
-    length: z.number().int().min(28).max(31),
-    cells: z.array(z.object({ t: ts, n: count, level, date: z.number().int().min(1).max(31) }).nullable()).max(37),
-  }),
+const DAY_MS = 86_400_000
+// the calendar as one count per day; the Story rebuilds the grid from it (calendarFrom). 100 years at most.
+const daily = z.object({
+  start: ts.refine((t) => t % DAY_MS === 0, 'must be a calendar day (midnight UTC)'),
+  counts: z.array(count).min(1).max(36_600),
 })
 
 // unknown keys are stripped (zod's default), so a client can't store anything the Story doesn't read
@@ -65,8 +56,8 @@ export const snapshotSchema = z.object({
   branches: count,
   tags: count,
   flow: z.object({ from: text(100), into: text(100), count }).nullable(),
-  cal: calendar.nullable(),
-}) satisfies z.ZodType<StoryStats>
+  daily: daily.nullable(),
+}) satisfies z.ZodType<StorySnapshot>
 
 export type Snapshot = z.infer<typeof snapshotSchema>
 

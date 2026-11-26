@@ -1,15 +1,16 @@
 // The Story's slides. Sizes are in cqw (percent of the card's width), so a slide reads the same full-screen on a
 // phone, in the desktop player and in the small poster on the Story tab.
-import { createContext, useContext, useEffect, useRef, useState } from 'react'
+import { useContext, useEffect, useRef, useState } from 'react'
 import { PixelBolt, PixelFire, PixelLogo } from '../pixel'
 import { fmt, MONTHS, shortDay } from '../../lib/story'
 import { Identicon, STORY_LANES } from './art'
+import CalendarGrid, { GREENS } from './CalendarGrid'
+import { StoryPaused } from './context'
 
 export const u = (n) => `${n}cqw`
 const d = (ms) => ({ '--d': `${ms}ms` })
 
-/** True while the player is paused or held; slides freeze their JS-driven motion with it. */
-export const StoryPaused = createContext(false)
+export { StoryHold, StoryPaused } from './context'
 
 /** Counts up to `to` once, easing out; stops while the story is paused. Jumps straight there when motion is reduced. */
 function useCountUp(to, ms = 1200, delay = 250) {
@@ -114,58 +115,11 @@ function Busiest({ s }) {
 }
 
 // Contribution calendar: our own green ramp on a dark card (0 = no commits)
-const GREENS = ['rgba(255,255,255,0.07)', '#123a2b', '#1b6a44', '#28a565', '#4ff0a0']
 // and inverted for the lime "best month" card: darker = more commits
 const LIMES = ['rgba(10,40,0,0.10)', '#8fd629', '#5aa81a', '#2f7310', '#123d05']
 
-/** The whole contribution calendar, sweeping in column by column. `lit` days glow; the rest can dim. */
-function CalendarGrid({ cal, delay = 500, dim = false, lit = null }) {
-  const cols = cal.weeks.length
-  const gap = cols > 22 ? 0.5 : 0.8
-  const cell = Math.min(7, (82 - gap * (cols - 1)) / cols)
-  const step = Math.min(30, 600 / cols) // the sweep lands within ~600ms, however long the history
-  // month labels, minus any that would sit on top of the next one (as GitHub does)
-  const starts = []
-  cal.weeks.forEach((w, i) => {
-    const m = new Date(w[0].t).getUTCMonth()
-    if (!starts.length || starts[starts.length - 1].m !== m) starts.push({ i, m })
-  })
-  const labels = starts.filter((x, k) => (!starts[k + 1] || starts[k + 1].i - x.i >= 3) && x.i <= cols - 3)
-  return (
-    <div className="flex flex-col" style={{ gap: u(1.2) }}>
-      <div className="relative" style={{ height: u(3.6), width: u(cols * (cell + gap)) }}>
-        {labels.map(({ i, m }) => (
-          <span key={i} className="story-rise absolute top-0 font-mono opacity-60" style={{ ...d(delay + i * step), left: u(i * (cell + gap)), fontSize: u(2.8) }}>
-            {MONTHS[m]}
-          </span>
-        ))}
-      </div>
-      <div className="grid grid-flow-col" style={{ gridTemplateRows: `repeat(7, ${u(cell)})`, gridAutoColumns: u(cell), gap: u(gap) }}>
-        {cal.weeks.flatMap((w, i) =>
-          w.map((c) => {
-            const on = lit?.(c.t)
-            return (
-              <span
-                key={c.t}
-                className="story-cell"
-                style={{
-                  ...d(delay + i * step),
-                  borderRadius: u(cell * 0.18),
-                  background: c.out ? 'transparent' : on ? GREENS[4] : GREENS[c.level],
-                  opacity: c.out ? 0 : dim && !on ? 0.28 : 1,
-                  boxShadow: on ? `0 0 ${u(2.4)} rgba(79,240,160,0.55)` : undefined,
-                }}
-              />
-            )
-          }),
-        )}
-      </div>
-    </div>
-  )
-}
-
 /** The whole history as one green wall. */
-function Calendar({ s }) {
+function Calendar({ s, theme }) {
   const n = useCountUp(s.cal.activeDays)
   return (
     <div className="relative flex h-full flex-col justify-center" style={{ padding: `0 ${u(9)}` }}>
@@ -176,7 +130,7 @@ function Calendar({ s }) {
       <Headline delay={250} size={7.6}>days in the green</Headline>
       <Sub delay={450}>Out of {fmt(s.cal.spanDays)} days since the first commit.</Sub>
       <div style={{ marginTop: u(9) }}>
-        <CalendarGrid cal={s.cal} />
+        <CalendarGrid cal={s.cal} travel bg={theme.bg} />
         <div className="story-rise flex items-center justify-end font-mono opacity-70" style={{ ...d(900), gap: u(1), fontSize: u(2.8), marginTop: u(2) }}>
           Less
           {GREENS.map((c, i) => (
@@ -223,8 +177,16 @@ function BestMonth({ s }) {
   )
 }
 
+// "Tue, Jul 31 to Sun, Aug 26", with the year once the history spans years (on both ends if it crosses New Year)
+function streakRange(from, to, withYear) {
+  if (!withYear) return `${shortDay(from)} to ${shortDay(to)}`
+  const y0 = new Date(from).getUTCFullYear()
+  const y1 = new Date(to).getUTCFullYear()
+  return y0 === y1 ? `${shortDay(from)} to ${shortDay(to)}, ${y1}` : `${shortDay(from)}, ${y0} to ${shortDay(to)}, ${y1}`
+}
+
 /** The longest run glowing on the dimmed calendar: two colors only (dark card, green), the flame as the one warm accent. */
-function Streak({ s }) {
+function Streak({ s, theme }) {
   const { len, from, to } = s.cal.streak
   const n = useCountUp(len, 900)
   return (
@@ -235,10 +197,10 @@ function Streak({ s }) {
       </div>
       <Headline delay={300}>days, no days off</Headline>
       <Sub delay={500}>
-        {shortDay(from)} to {shortDay(to)}. The longest the squares stayed green.
+        {streakRange(from, to, s.cal.spanDays > 366)}. The longest the squares stayed green.
       </Sub>
       <div style={{ marginTop: u(9) }}>
-        <CalendarGrid cal={s.cal} delay={700} dim lit={(t) => t >= from && t <= to} />
+        <CalendarGrid cal={s.cal} delay={700} highlight={{ from, to }} bg={theme.bg} />
       </div>
     </div>
   )

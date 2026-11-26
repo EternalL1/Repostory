@@ -15,7 +15,7 @@ the only thing a server ever stores is a Story you choose to share (its computed
 | **Graph** | Commit DAG with branch lanes in an app shell: branch rail, graph, docked commit inspector. Search, filter by branch, highlight the longest path. `j` / `k` (or arrows) move the selection, `Esc` clears it. |
 | **Compare** | "Compare A with B" answers in one line: diverged at the merge-base (lowest common ancestor) or fast-forward, plus the commits only on each side. |
 | **Team** | Commits per author, weekday × hour heatmap, hotspot files and single owners, merge flow between branches. |
-| **Story** | A tap-through recap of the repo in full-screen slides, for flexing your work: commits, the contribution calendar, the greenest month, biggest day, longest streak (lit on the calendar), when the team works, top contributors, most-changed files. Ends on a poster you can save as a 1080×1920 PNG, or a share link (`/w/<slug>`) with its own preview card. |
+| **Story** | A tap-through recap of the repo in full-screen slides, for flexing your work: commits, the contribution calendar, the greenest month, biggest day, longest streak (lit on the calendar), when the team works, top contributors, most-changed files. Ends on a poster you can save as a 1080×1920 PNG, or a share link (`/w/<slug>`) with its own preview card. The calendar keeps one square per day at any length: up to a year it fills the card, up to 3 years it scrolls sideways, longer histories become one row per year that scroll down to today. |
 
 Opening a local folder and connecting GitHub are planned.
 
@@ -61,7 +61,8 @@ Share links need a Postgres database and a cron secret:
 How a share works:
 
 - It stores a checked snapshot of the Story stats (`src/db/snapshot.ts`), never the git log, and a hash of a delete
-  token. The token is shown once, kept in the creator's browser, and sent as `Authorization: Bearer <token>` to
+  token. The contribution calendar is stored as one count per day (a 30-year history is a few KB) and rebuilt on the
+  shared page by the same `calendarFrom` the Story tab uses. The token is shown once, kept in the creator's browser, and sent as `Authorization: Bearer <token>` to
   `DELETE /api/shares/<slug>`.
 - It expires after `SHARE_TTL_DAYS` (365). Expired links read as not found at once; `/api/cron/cleanup-shares` deletes
   them daily at 04:00 UTC.

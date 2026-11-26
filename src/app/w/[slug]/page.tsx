@@ -28,5 +28,5 @@ export default async function SharedStoryPage({ params }: Props) {
   const { slug } = await params
   const share = await load(slug)
   if (!share) notFound()
-  return <SharedStory slug={slug} stats={share.stats} expiresAt={share.expiresAt.toISOString()} />
+  return <SharedStory slug={slug} snapshot={share.stats} expiresAt={share.expiresAt.toISOString()} />
 }
