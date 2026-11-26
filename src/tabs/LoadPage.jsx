@@ -30,8 +30,8 @@ export default function LoadPage({ model, error, onLoad, onLoadSample, onOpenGra
   const samples = useMemo(() => SAMPLES.map((s) => ({ ...s, size: sampleSize(s.text()) })), [])
 
   return (
-    <main className="mx-auto grid max-w-[1240px] gap-x-14 gap-y-12 px-4 pb-16 pt-10 sm:px-8 sm:pt-14 lg:grid-cols-[minmax(0,460px)_minmax(0,1fr)]">
-      <div className="flex flex-col gap-8">
+    <main className="mx-auto grid max-w-[1240px] grid-cols-1 gap-x-14 gap-y-12 px-4 pb-16 pt-10 sm:px-8 sm:pt-14 lg:grid-cols-[minmax(0,460px)_minmax(0,1fr)]">
+      <div className="flex min-w-0 flex-col gap-8">
         <div>
           <h1 className="m-0 text-2xl font-semibold leading-tight">See how your repository grew.</h1>
           <p className="m-0 mt-3 text-base leading-relaxed text-soft">
