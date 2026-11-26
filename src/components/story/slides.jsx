@@ -2,7 +2,7 @@
 // phone, in the desktop player and in the small poster on the Story tab.
 import { useContext, useEffect, useRef, useState } from 'react'
 import { PixelBolt, PixelFire, PixelLogo } from '../pixel'
-import { fmt, MONTHS, shortDay } from '../../lib/story'
+import { fileLabels, fmt, MONTHS, shortDay } from '../../lib/story'
 import { Identicon, STORY_LANES } from './art'
 import CalendarGrid, { GREENS } from './CalendarGrid'
 import { StoryPaused } from './context'
@@ -60,6 +60,8 @@ const Big = ({ children, delay = 150, size = 24 }) => (
   </div>
 )
 const basename = (p) => p.split('/').pop()
+// about how many characters of a file label fit one Summary column at its type size
+const SUMMARY_FILE_CHARS = 13
 const dirname = (p) => p.split('/').slice(0, -1).join('/')
 const firstName = (n) => n.split(' ')[0]
 const pct = (x) => (x < 0.01 && x > 0 ? '<1' : Math.round(x * 100))
@@ -420,12 +422,19 @@ export function Summary({ s, animate = true, actions = false }) {
         <div className={a} style={d(350)}>
           <div className="font-medium opacity-70" style={{ fontSize: u(3.4) }}>Most-changed files</div>
           <ol className="m-0 list-none p-0" style={{ marginTop: u(1.5) }}>
-            {s.hotspots.map((f, i) => (
-              <li key={f.path} className="truncate font-bold" style={{ fontSize: u(4), lineHeight: 1.5 }}>
-                <span className="inline-block tabular-nums" style={{ width: u(5) }}>{i + 1}</span>
-                {basename(f.path)}
-              </li>
-            ))}
+            {fileLabels(s.hotspots.map((f) => f.path)).map((label, i) => {
+              // when a folder is needed to tell two files apart, the folder shortens and the file name stays whole
+              const cut = label.lastIndexOf('/') + 1
+              const name = label.slice(cut)
+              const folder = cut > 0 ? (label.length <= SUMMARY_FILE_CHARS ? label.slice(0, cut - 1) : '…') : ''
+              return (
+                <li key={s.hotspots[i].path} className="truncate font-bold" style={{ fontSize: u(4), lineHeight: 1.5 }}>
+                  <span className="inline-block tabular-nums" style={{ width: u(5) }}>{i + 1}</span>
+                  {folder && <span className="opacity-60">{folder}/</span>}
+                  {name}
+                </li>
+              )
+            })}
           </ol>
         </div>
         <div className={a} style={d(450)}>

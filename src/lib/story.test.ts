@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { buildModel, type Model } from './git'
 import { SAMPLES } from './samples'
-import { calendar, calendarFrom, calendarLayout, dailyCounts, fromSnapshot, MONTHS, storyStats, toSnapshot } from './story'
+import { calendar, calendarFrom, calendarLayout, dailyCounts, fileLabels, fromSnapshot, MONTHS, storyStats, toSnapshot } from './story'
 
 // ── the calendar exactly as it was computed before shares stored daily counts (characterization reference) ──
 const DAY_MS = 86_400_000
@@ -156,5 +156,13 @@ describe('calendarLayout', () => {
     expect(layoutOf(longRepo(3))).toBe('strip')
     expect(layoutOf(longRepo(3.2))).toBe('rows')
     expect(layoutOf(longRepo(15))).toBe('rows')
+  })
+})
+
+describe('fileLabels', () => {
+  it('uses file names, adding folders only to tell apart files of the same name', () => {
+    expect(fileLabels(['README.md', 'src/pages/TeamPage.jsx', 'repostory/README.md'])).toEqual(['README.md', 'TeamPage.jsx', 'repostory/README.md'])
+    expect(fileLabels(['a/x/index.ts', 'b/x/index.ts', 'c/y.ts'])).toEqual(['a/x/index.ts', 'b/x/index.ts', 'y.ts'])
+    expect(fileLabels([])).toEqual([])
   })
 })

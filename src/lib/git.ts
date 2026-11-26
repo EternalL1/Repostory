@@ -9,7 +9,8 @@
 //   out-degree = number of parents   (>= 2 means a merge commit)
 //   in-degree  = number of children  (>= 2 means a branch point)
 
-export const GIT_LOG_COMMAND = 'git log --all --pretty=format:"@@%H|%P|%an|%aI|%D|%s" --name-only'
+// %aN (not %an) applies the repository's .mailmap, so one person committing under two names counts once
+export const GIT_LOG_COMMAND = 'git log --all --pretty=format:"@@%H|%P|%aN|%aI|%D|%s" --name-only'
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 export const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']

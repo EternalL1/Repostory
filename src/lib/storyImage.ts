@@ -1,6 +1,6 @@
 // Draws the Story's summary poster to a 1080×1920 PNG (the size stories use), mirroring the Summary slide.
 import { identiconCells, identiconColor, STORY_LANES } from '../components/story/art'
-import { fmt, type StoryStats } from './story'
+import { fileLabels, fmt, type StoryStats } from './story'
 
 const W = 1080
 const H = 1920
@@ -15,6 +15,17 @@ function fit(ctx: CanvasRenderingContext2D, text: string, max: number): string {
   let t = text
   while (t.length > 1 && ctx.measureText(`${t}…`).width > max) t = t.slice(0, -1)
   return `${t}…`
+}
+
+/** Fits a file label, shortening its folder before its file name ("repo…/README.md"). */
+function fitPath(ctx: CanvasRenderingContext2D, label: string, max: number): string {
+  if (ctx.measureText(label).width <= max) return label
+  const cut = label.lastIndexOf('/') + 1
+  if (!cut) return fit(ctx, label, max)
+  const name = label.slice(cut)
+  let folder = label.slice(0, cut - 1)
+  while (folder.length > 1 && ctx.measureText(`${folder}…/${name}`).width > max) folder = folder.slice(0, -1)
+  return ctx.measureText(`${folder}…/${name}`).width <= max ? `${folder}…/${name}` : fit(ctx, name, max)
 }
 
 function identicon(ctx: CanvasRenderingContext2D, name: string, x: number, y: number, size: number) {
@@ -81,7 +92,7 @@ export async function renderSummaryPng(s: StoryStats): Promise<Blob | null> {
 
   // two columns
   const colW = (W - pad * 2 - 5 * U) / 2
-  const col = (x: number, title: string, items: string[]) => {
+  const col = (x: number, title: string, items: string[], paths = false) => {
     ctx.font = `500 ${3.4 * U}px ${SANS}`
     ctx.fillStyle = 'rgba(255,255,255,0.7)'
     ctx.fillText(title, x, y + 3.4 * U)
@@ -90,11 +101,11 @@ export async function renderSummaryPng(s: StoryStats): Promise<Blob | null> {
     items.forEach((t, i) => {
       const ly = y + 3.4 * U + 1.5 * U + (i + 1) * 6 * U - 1.2 * U
       ctx.fillText(String(i + 1), x, ly)
-      ctx.fillText(fit(ctx, t, colW - 5 * U), x + 5 * U, ly)
+      ctx.fillText(paths ? fitPath(ctx, t, colW - 5 * U) : fit(ctx, t, colW - 5 * U), x + 5 * U, ly)
     })
   }
   col(pad, 'Top contributors', s.top.map((t) => t.name))
-  col(pad + colW + 5 * U, 'Most-changed files', s.hotspots.map((f) => f.path.split('/').pop() ?? f.path))
+  col(pad + colW + 5 * U, 'Most-changed files', fileLabels(s.hotspots.map((f) => f.path)), true)
   y += 3.4 * U + 1.5 * U + Math.max(s.top.length, s.hotspots.length, 1) * 6 * U + 5 * U
 
   ctx.font = `500 ${3.4 * U}px ${SANS}`

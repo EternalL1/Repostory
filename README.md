@@ -76,8 +76,11 @@ How a share works:
 Run this inside any Git repository, then paste the output into the **Load** tab:
 
 ```bash
-git log --all --pretty=format:"@@%H|%P|%an|%aI|%D|%s" --name-only
+git log --all --pretty=format:"@@%H|%P|%aN|%aI|%D|%s" --name-only
 ```
+
+If one person shows up under two names (different git settings on two machines), add a
+[`.mailmap`](https://git-scm.com/docs/gitmailmap) to that repository mapping both to one name; `%aN` uses it.
 
 For big repos, add `-n 500` to load only the latest 500 commits.
 

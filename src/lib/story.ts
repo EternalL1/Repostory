@@ -162,6 +162,21 @@ export function calendarLayout(cal: { weeks: unknown[]; spanDays: number }): Cal
   return cal.spanDays > ROWS_FROM_YEARS * 366 ? 'rows' : 'strip'
 }
 
+/**
+ * Short names for a list of file paths: the file name alone, with as much of its folder as it takes to tell apart
+ * two files of the same name ("README.md" and "repostory/README.md").
+ */
+export function fileLabels(paths: string[]): string[] {
+  const parts = paths.map((p) => p.split('/'))
+  return parts.map((ps, i) => {
+    for (let n = 1; n <= ps.length; n++) {
+      const label = ps.slice(-n).join('/')
+      if (!parts.some((other, j) => j !== i && other.slice(-n).join('/') === label)) return label
+    }
+    return paths[i]
+  })
+}
+
 export const fmt = (n: number) => n.toLocaleString('en-US')
 
 /** Everything the Story's slides show, in one object. */
