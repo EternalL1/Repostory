@@ -154,10 +154,15 @@ export function calendarFrom(daily: DailyCounts | null) {
 /** The calendar for a loaded repository. */
 export const calendar = (model: Model) => calendarFrom(dailyCounts(model))
 
-/** How the Calendar and Streak slides draw it: the original strip when it fits, else a scrolling strip, else year rows. */
+/**
+ * How the Calendar and Streak slides draw it: a month-style grid for a few weeks, the original strip up to a year,
+ * then a scrolling strip, then year rows.
+ */
 export const ROWS_FROM_YEARS = 3
-export type CalendarLayout = 'fit' | 'strip' | 'rows'
+export const MONTH_GRID_WEEKS = 5
+export type CalendarLayout = 'month' | 'fit' | 'strip' | 'rows'
 export function calendarLayout(cal: { weeks: unknown[]; spanDays: number }): CalendarLayout {
+  if (cal.weeks.length <= MONTH_GRID_WEEKS) return 'month'
   if (cal.weeks.length <= 53) return 'fit'
   return cal.spanDays > ROWS_FROM_YEARS * 366 ? 'rows' : 'strip'
 }

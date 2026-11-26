@@ -149,8 +149,9 @@ describe('calendar from daily counts', () => {
 
 describe('calendarLayout', () => {
   const layoutOf = (m: Model) => calendarLayout(calendar(m)!)
-  it('keeps the original strip up to a year, scrolls the strip up to 3 years, and folds longer histories into rows', () => {
+  it('shows a month page for a few weeks, keeps the original strip up to a year, scrolls the strip up to 3 years, and folds longer histories into rows', () => {
     expect(layoutOf(models.find(([n]) => n === 'acme-storefront')![1])).toBe('fit')
+    expect(layoutOf(longRepo(0.05))).toBe('month')
     expect(layoutOf(longRepo(1))).toBe('fit')
     expect(layoutOf(longRepo(2))).toBe('strip')
     expect(layoutOf(longRepo(3))).toBe('strip')

@@ -461,7 +461,7 @@ export function Summary({ s, animate = true, actions = false }) {
 export const SLIDES = [
   { id: 'intro', label: 'Intro', theme: { bg: '#0b0d12', fg: '#f4f6fa' }, backdrop: { variant: 'graph', colors: ['#5e9eff', '#3ddc97', '#ff7eb6'] }, duration: 5000, render: Intro },
   { id: 'commits', label: 'Commits', theme: { bg: '#ff4fa3', fg: '#16030c' }, backdrop: { variant: 'stairs', a: '#7a0a3d', b: '#ffd23f' }, duration: 5500, render: Commits },
-  { id: 'calendar', label: 'Calendar', theme: { bg: '#07120d', fg: '#eafff3' }, duration: 8500, render: Calendar, when: (s) => s.cal?.activeDays >= 7 },
+  { id: 'calendar', label: 'Calendar', theme: { bg: '#07120d', fg: '#eafff3' }, duration: 8500, render: Calendar, when: (s) => s.cal?.activeDays >= 1 },
   { id: 'month', label: 'Best month', theme: { bg: '#b8f34a', fg: '#0e2a04' }, duration: 8000, render: BestMonth, when: (s) => s.cal?.month.commits >= 10 },
   { id: 'streak', label: 'Streak', theme: { bg: '#0b0d12', fg: '#ffffff' }, duration: 8000, render: Streak, when: (s) => s.cal?.streak.len >= 2 },
   { id: 'clock', label: 'When', theme: { bg: '#2a1a6e', fg: '#f1edff', hot: '#a3e635' }, backdrop: { variant: 'scatter', a: '#56d4e8', b: '#7b5cff', seed: 3 }, duration: 7000, render: Clock },

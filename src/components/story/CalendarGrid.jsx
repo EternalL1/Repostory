@@ -1,5 +1,6 @@
 // The contribution calendar on the Calendar and Streak slides. A square is always one day and never shrinks below
 // the size of a one-year strip; how the history is laid out depends on its length (calendarLayout in lib/story):
+//   month up to 5 weeks: a calendar page, weekdays across, one row per week, the date in each day
 //   fit   up to a year: the original strip across the card
 //   strip up to 3 years: the same strip at the one-year size, scrolling sideways
 //   rows  longer: one row per calendar year, scrolling up and down
@@ -55,6 +56,49 @@ function Cell({ c, cell, range, sweep }) {
   }
   if (sweep != null) Object.assign(style, d(sweep))
   return <span className={sweep != null ? 'story-cell' : undefined} style={style} />
+}
+
+/** A few weeks: a calendar page like the Best month slide, in greens, so a young repo's days read as dates. */
+function MonthGrid({ cal, range }) {
+  const days = cal.weeks.flat()
+  const inside = days.filter((c) => !c.out)
+  const first = new Date(inside[0].t)
+  const last = new Date(inside[inside.length - 1].t)
+  const sameMonth = first.getUTCMonth() === last.getUTCMonth() && first.getUTCFullYear() === last.getUTCFullYear()
+  const title = sameMonth
+    ? `${MONTHS[first.getUTCMonth()]} ${first.getUTCFullYear()}`
+    : `${MONTHS[first.getUTCMonth()]} – ${MONTHS[last.getUTCMonth()]} ${last.getUTCFullYear()}`
+  return (
+    <div>
+      <div className="story-rise font-mono opacity-70" style={{ ...d(450), fontSize: u(3.2), marginBottom: u(2.4) }}>{title}</div>
+      <div className="grid grid-cols-7" style={{ gap: u(1.4) }}>
+        {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((w, i) => (
+          <span key={i} className="story-rise text-center font-mono opacity-60" style={{ ...d(500), fontSize: u(3) }}>{w}</span>
+        ))}
+        {days.map((c, i) => {
+          if (c.out) return <span key={c.t} />
+          const on = inRange(range, c.t)
+          return (
+            <span
+              key={c.t}
+              className="story-cell grid aspect-square place-items-center font-mono font-bold tabular-nums"
+              style={{
+                ...d(600 + i * 22),
+                borderRadius: u(1.4),
+                fontSize: u(3.2),
+                background: on ? GREENS[4] : GREENS[c.level],
+                color: on || c.level >= 3 ? '#04140b' : 'rgba(234,255,243,0.6)',
+                opacity: range && !on ? 0.28 : 1,
+                boxShadow: on ? `0 0 ${u(2.4)} rgba(79,240,160,0.55)` : undefined,
+              }}
+            >
+              {new Date(c.t).getUTCDate()}
+            </span>
+          )
+        })}
+      </div>
+    </div>
+  )
 }
 
 /** Up to a year: the strip exactly as it has always been, sweeping in column by column. */
@@ -416,6 +460,7 @@ function RowsGrid({ cal, delay, range, travel, bg }) {
 export default function CalendarGrid({ cal, delay = 500, highlight = null, travel = false, bg = '#07120d' }) {
   const layout = calendarLayout(cal)
   const range = highlight ? [highlight.from, highlight.to] : null
+  if (layout === 'month') return <MonthGrid cal={cal} range={range} />
   if (layout === 'fit') return <FitGrid cal={cal} delay={delay} range={range} />
   const props = { cal, delay, range, travel, bg }
   return layout === 'strip' ? <StripGrid {...props} /> : <RowsGrid {...props} />
