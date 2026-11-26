@@ -3,7 +3,9 @@ import '../components/story/story.css'
 import { Backdrop } from '../components/story/art'
 import { slidesFor, StoryHold, StoryPaused, Summary } from '../components/story/slides'
 import { Button, CopyButton, fieldClass } from '../components/ui'
+import { onlyAuthors } from '../lib/git'
 import { storyStats, toSnapshot } from '../lib/story'
+import { teamStats } from '../lib/team'
 import { count } from '../lib/kpi'
 import { deleteLink, rememberToken } from '../lib/shareTokens'
 import { savePoster } from '../lib/storyImage'
@@ -321,13 +323,92 @@ function SharePanel({ stats, onClose }) {
   )
 }
 
+const PEOPLE_SHOWN = 12 // chips before "Show all"
+
+/**
+ * Who the Story is about. × leaves someone out, a click on a name keeps only them, + brings them back. The slides, the
+ * poster and the share link follow, so other people's names never leave the browser unless they're kept.
+ */
+function PeoplePicker({ people, removed, onChange }) {
+  const [all, setAll] = useState(false)
+  const kept = people.length - removed.size
+  const shown = all ? people : people.slice(0, PEOPLE_SHOWN)
+  const toggle = (name) => {
+    const next = new Set(removed)
+    if (next.has(name)) next.delete(name)
+    else if (kept > 1) next.add(name)
+    onChange(next)
+  }
+  const only = (name) => onChange(new Set(people.map((p) => p.name).filter((n) => n !== name)))
+  if (people.length < 2) return null
+  return (
+    <section aria-labelledby="peopleTitle" className="mt-8">
+      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+        <h2 id="peopleTitle" className="m-0 text-sm font-medium">People in this Story</h2>
+        <span className="text-xs tabular-nums text-muted">
+          {kept} of {people.length}
+        </span>
+        {removed.size > 0 && (
+          <button type="button" onClick={() => onChange(new Set())} className="press cursor-pointer text-xs font-medium text-accent hover:underline">
+            Bring everyone back
+          </button>
+        )}
+      </div>
+      <ul className="m-0 mt-2 flex list-none flex-wrap gap-1.5 p-0">
+        {shown.map((p) => {
+          const out = removed.has(p.name)
+          return (
+            <li key={p.name} className={`inline-flex items-center rounded-full border text-xs ${out ? 'border-dashed border-line text-muted' : 'border-line-strong text-soft'}`}>
+              <button
+                type="button"
+                onClick={() => only(p.name)}
+                title={`Keep only ${p.name}`}
+                className={`press cursor-pointer rounded-l-full py-1 pl-2.5 pr-1.5 hover:text-fg ${out ? 'line-through decoration-1' : ''}`}
+              >
+                {p.name} <span className="tabular-nums text-muted">{p.commits}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => toggle(p.name)}
+                disabled={!out && kept === 1}
+                aria-label={out ? `Add ${p.name} back` : `Leave ${p.name} out`}
+                className="press grid size-6 cursor-pointer place-items-center rounded-full text-muted hover:bg-panel-2 hover:text-fg disabled:cursor-not-allowed disabled:opacity-30"
+              >
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" aria-hidden="true">
+                  {out ? <path d="M12 5v14M5 12h14" /> : <path d="M6 6l12 12M18 6L6 18" />}
+                </svg>
+              </button>
+            </li>
+          )
+        })}
+        {people.length > PEOPLE_SHOWN && (
+          <li>
+            <button type="button" onClick={() => setAll((v) => !v)} className="press cursor-pointer rounded-full px-2.5 py-1 text-xs text-muted hover:text-fg">
+              {all ? 'Show fewer' : `Show all ${people.length}`}
+            </button>
+          </li>
+        )}
+      </ul>
+      <p className="m-0 mt-2 text-xs text-muted">× leaves someone out. Click a name to keep only them. The poster and share link use this list.</p>
+    </section>
+  )
+}
+
 export default function StoryPage({ model }) {
-  const stats = useMemo(() => storyStats(model), [model])
-  return <StoryView stats={stats} />
+  const people = useMemo(() => teamStats(model).authors, [model])
+  const [removed, setRemoved] = useState(() => new Set())
+  useEffect(() => setRemoved(new Set()), [model])
+  const stats = useMemo(() => {
+    // names left over from another repository (the reset lands a render later) are ignored
+    const keep = people.map((p) => p.name).filter((n) => !removed.has(n))
+    if (!removed.size || !keep.length || keep.length === people.length) return storyStats(model)
+    return storyStats(onlyAuthors(model, new Set(keep)))
+  }, [model, people, removed])
+  return <StoryView stats={stats} people={<PeoplePicker people={people} removed={removed} onChange={setRemoved} />} />
 }
 
 /** The Story's landing: intro, chapters, the summary card, and the player. `shared` = opened from a /w/ link. */
-export function StoryView({ stats, shared = false }) {
+export function StoryView({ stats, shared = false, people = null }) {
   const [open, setOpen] = useState(false)
   const [saving, setSaving] = useState(false)
   const [sharing, setSharing] = useState(false)
@@ -375,6 +456,7 @@ export function StoryView({ stats, shared = false }) {
           )}
         </div>
         {sharing && <SharePanel stats={stats} onClose={() => setSharing(false)} />}
+        {!shared && people}
         <ol className="m-0 mt-8 flex list-none flex-wrap gap-1.5 p-0">
           {chapters.map((c, i) => (
             <li key={c.id} className="inline-flex items-center gap-1.5 rounded-full border border-line px-2.5 py-1 text-xs text-soft">

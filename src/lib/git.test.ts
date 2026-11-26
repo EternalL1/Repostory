@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildModel, compareCommits, mergeBases, parseLog, parseRefs } from './git'
+import { buildModel, compareCommits, mergeBases, onlyAuthors, parseLog, parseRefs } from './git'
 import { sampleLogText } from './sample'
 
 // Builds git log text from [hash, parents, refs?] rows, newest first, like the real command prints it
@@ -134,5 +134,26 @@ describe('compareCommits', () => {
     const r = compareCommits(sample, DARK_MODE.hash, STAGING.hash)
     expect(r.aOnly.map((c) => c.subject)).toEqual(['Persist theme preference', 'Dark mode toggle'])
     expect(r.bOnly.map((c) => c.subject)).toEqual(['Refactor MainActivity into screens'])
+  })
+})
+
+describe('onlyAuthors', () => {
+  it('keeps only the chosen people’s commits, with their files and refs', () => {
+    const dan = onlyAuthors(sample, new Set(['Dan Lim']))
+    expect(new Set(dan.order.map((c) => c.author))).toEqual(new Set(['Dan Lim']))
+    expect(dan.stats.commits).toBe(sample.order.filter((c) => c.author === 'Dan Lim').length)
+    expect(dan.commits.get(DARK_MODE.hash)!.files).toEqual(DARK_MODE.files)
+    expect(dan.branches.map((b) => b.name)).toEqual(['feature/dark-mode'])
+    expect(dan.name).toBe(sample.name)
+  })
+
+  it('keeps HEAD and tags on the commits that stay', () => {
+    const ana = onlyAuthors(sample, new Set(['Ana Reyes']))
+    expect(ana.headHash).toBe(MAIN.hash)
+    expect(ana.tags.map((t) => t.name)).toEqual(['v0.1'])
+  })
+
+  it('refuses to leave nobody', () => {
+    expect(() => onlyAuthors(sample, new Set())).toThrow(/at least one person/)
   })
 })

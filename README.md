@@ -28,6 +28,10 @@ The Story's calendar keeps one square per day at any length:
 
 Viewers can scroll a moving calendar themselves; the Story pauses while they do. The Streak slide opens on the streak.
 
+**People in this Story** (on the Story tab) picks who the Story is about: × leaves someone out, a click on a name keeps
+only them. The slides, the poster and the share link follow, so a Story about your own work carries no one else's name.
+The other tabs keep the whole history.
+
 ## Get a history in
 
 **From GitHub:** paste `github.com/owner/name` (any page of the repository, or a clone URL) on the Load tab. It loads
@@ -59,7 +63,8 @@ Histories of any size work: 50,000 commits load in about 0.3 s. For 100,000+ com
   `.mailmap` and are never sent to the browser.
 - A Story is stored only when someone presses **Share link**, and the share step lists exactly what goes up: the
   repository name, up to 5 contributor names, up to 5 file paths, the most common first word of commit messages, the
-  busiest branch flow, and counts and dates. Never the log, commit messages or the rest of the files.
+  busiest branch flow, and counts and dates. Never the log, commit messages or the rest of the files. Leaving people out
+  under **People in this Story** keeps their names out of the poster and the link.
 - Share links expire after a year. Whoever made one can delete it from its page in the same browser.
 - Visits are counted with Vercel Web Analytics: page views, referrers and rough location, without cookies. Nothing
   from a loaded repository is sent to it.

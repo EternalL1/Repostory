@@ -333,6 +333,24 @@ export function buildModel(text: string, name = 'repository'): Model {
   }
 }
 
+/** A ref as `git log --decorate` prints it, so a history can be written back out and parsed again. */
+const refText = (r: Ref) => (r.type === 'tag' ? `tag: ${r.name}` : r.head ? `HEAD -> ${r.name}` : r.name)
+
+/**
+ * The same history with only the commits of `people`, as a new model: for a Story about some of the contributors
+ * (say, only yourself). Links to commits that were left out are dropped, as for a shallow log.
+ */
+export function onlyAuthors(model: Model, people: Set<string>): Model {
+  const lines: string[] = []
+  for (const c of model.order) {
+    if (!people.has(c.author)) continue
+    lines.push(`@@${c.hash}|${c.parents.join(' ')}|${c.author}|${c.date}|${c.refs.map(refText).join(', ')}|${c.subject}`)
+    for (const f of c.files) lines.push(f)
+  }
+  if (!lines.length) throw new Error('Keep at least one person.')
+  return buildModel(lines.join('\n'), model.name)
+}
+
 /** Compare two commits (usually branch tips). */
 export function compareCommits(model: Model, a: string, b: string): Comparison {
   const { commits } = model
