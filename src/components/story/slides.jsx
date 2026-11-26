@@ -422,6 +422,7 @@ export function Summary({ s, animate = true, actions = false }) {
         <div className={a} style={d(350)}>
           <div className="font-medium opacity-70" style={{ fontSize: u(3.4) }}>Most-changed files</div>
           <ol className="m-0 list-none p-0" style={{ marginTop: u(1.5) }}>
+            {s.hotspots.length === 0 && <li className="font-bold opacity-60" style={{ fontSize: u(4), lineHeight: 1.5 }}>—</li>}
             {fileLabels(s.hotspots.map((f) => f.path)).map((label, i) => {
               // when a folder is needed to tell two files apart, the folder shortens and the file name stays whole
               const cut = label.lastIndexOf('/') + 1

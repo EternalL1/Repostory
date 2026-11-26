@@ -281,7 +281,7 @@ export default function GraphPage({ model, selected, onSelect, onSetCompare }) {
             className="ml-auto max-md:hidden"
             trigger={
               <button type="button" className="flex min-h-8 cursor-default items-center gap-1.5 rounded-lg px-2 text-xs tabular-nums text-muted hover:text-subtle">
-                {s.commits} commits · {s.merges} merges
+                {model.truncated ? `newest ${s.commits}` : s.commits} commits · {s.merges} merges
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
                   <circle cx="12" cy="12" r="9" />
                   <path d="M12 11v5M12 8h.01" />

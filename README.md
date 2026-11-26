@@ -11,13 +11,13 @@ the only thing a server ever stores is a Story you choose to share (its computed
 
 | Tab | What it does |
 | --- | --- |
-| **Load** | Paste `git log` output, drop or open it as a .txt file, next to a live preview of the loaded graph. Four fictional sample repos to try (see below). |
+| **Load** | Load a public GitHub repository by link, or paste `git log` output (drop or open it as a .txt file) for private repos and file stats, next to a live preview of the loaded graph. Four fictional sample repos to try (see below). |
 | **Graph** | Commit DAG with branch lanes in an app shell: branch rail, graph, docked commit inspector. Search, filter by branch, highlight the longest path. `j` / `k` (or arrows) move the selection, `Esc` clears it. |
 | **Compare** | "Compare A with B" answers in one line: diverged at the merge-base (lowest common ancestor) or fast-forward, plus the commits only on each side. |
 | **Team** | Commits per author, weekday × hour heatmap, hotspot files and single owners, merge flow between branches. |
 | **Story** | A tap-through recap of the repo in full-screen slides, for flexing your work: commits, the contribution calendar, the greenest month, biggest day, longest streak (lit on the calendar), when the team works, top contributors, most-changed files. Ends on a poster you can save as a 1080×1920 PNG, or a share link (`/w/<slug>`) with its own preview card. The calendar keeps one square per day at any length: up to a year it fills the card, up to 3 years it scrolls sideways, longer histories become one row per year that scroll down to today. |
 
-Opening a local folder and connecting GitHub are planned.
+Opening a local folder and signing in with GitHub (for private repositories and file stats on links) are planned.
 
 ## Run it
 
@@ -57,7 +57,10 @@ Share links need a Postgres database and a cron secret:
 3. Add an environment variable `CRON_SECRET` (any long random string, e.g. `openssl rand -hex 32`). Vercel sends it
    to the daily cleanup job in `vercel.json`; without it the job refuses to run and expired rows stay in the table
    (they still never open).
-4. Recommended: a **Firewall → Rate limit** rule on `/api/shares` (for example 10 requests a minute per IP).
+4. Recommended: a **Firewall → Rate limit** rule on paths starting with `/api/` (for example 10 requests a minute per
+   IP). Hobby allows one rule, and this one covers share links and GitHub loading.
+5. For GitHub links: a fine-grained GitHub token with **Public repositories (read-only)** access and no other
+   permissions, saved as `GITHUB_TOKEN` (Production and Preview).
 
 How a share works:
 
@@ -70,6 +73,19 @@ How a share works:
 - At most `MAX_SHARES_PER_HOUR` (300) links are made per rolling hour across everyone; past that the API answers 429.
 - `/w/<slug>` and its card are cached for 5 minutes; deleting a link purges them right away.
 - When the Story's shape changes, bump `SNAPSHOT_VERSION` and teach `getShare` to read the older rows.
+
+## Load from GitHub
+
+Paste a public repository's link (`github.com/owner/name`, any page of it, or a clone URL) on the Load tab.
+`/api/github` reads it with the server's `GITHUB_TOKEN` and returns the same text as the git log command, so every tab
+works unchanged:
+
+- the default branch's newest 2,000 commits, then each other branch back to where it joins them (up to 1,000 more);
+- tags, and author names as `.mailmap` sets them (emails are read for that and never sent to the browser);
+- no file lists: GitHub returns those one commit per request, which one shared token can't afford for every visitor.
+
+Answers are cached by Vercel's CDN for 10 minutes per repository. Small repositories load in 1–3 s, very large ones in
+7–11 s (GitHub's own speed).
 
 ## Load your own repo
 

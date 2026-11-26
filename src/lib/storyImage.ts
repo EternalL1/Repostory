@@ -105,7 +105,7 @@ export async function renderSummaryPng(s: StoryStats): Promise<Blob | null> {
     })
   }
   col(pad, 'Top contributors', s.top.map((t) => t.name))
-  col(pad + colW + 5 * U, 'Most-changed files', fileLabels(s.hotspots.map((f) => f.path)), true)
+  col(pad + colW + 5 * U, 'Most-changed files', s.hotspots.length ? fileLabels(s.hotspots.map((f) => f.path)) : ['—'], true)
   y += 3.4 * U + 1.5 * U + Math.max(s.top.length, s.hotspots.length, 1) * 6 * U + 5 * U
 
   ctx.font = `500 ${3.4 * U}px ${SANS}`

@@ -1,6 +1,7 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import CommitGraph from '../components/CommitGraph'
 import { GIT_LOG_COMMAND } from '../lib/git'
+import { parseRepoInput } from '../lib/github'
 import { SAMPLES } from '../lib/samples'
 import { Button, CopyButton, fieldClass } from '../components/ui'
 import { PixelClipboard, PixelTerminal } from '../components/pixel'
@@ -13,6 +14,67 @@ function sampleSize(text) {
 }
 
 const PREVIEW_ROWS = 13
+
+/** Load a public GitHub repository: the server turns it into the same log format as a paste. */
+function GitHubLoader({ onLoad }) {
+  const [repo, setRepo] = useState('')
+  const [state, setState] = useState({ status: 'idle' })
+  const request = useRef(null)
+  useEffect(() => () => request.current?.abort(), [])
+
+  const load = async (e) => {
+    e.preventDefault()
+    const input = repo.trim()
+    if (!input) return
+    request.current?.abort()
+    const controller = new AbortController()
+    request.current = controller
+    const parsed = parseRepoInput(input)
+    setState({ status: 'loading', label: parsed ? `${parsed.owner}/${parsed.name}` : input })
+    try {
+      const res = await fetch(`/api/github?repo=${encodeURIComponent(input)}`, { signal: controller.signal })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(data.error || 'Loading from GitHub failed. Try again in a moment.')
+      setState({ status: 'idle' })
+      onLoad(data.text, data.name, { source: 'github', truncated: data.truncated })
+    } catch (err) {
+      if (err.name === 'AbortError') return
+      setState({ status: 'error', message: err.message })
+    }
+  }
+
+  const loading = state.status === 'loading'
+  return (
+    <form className="flex flex-col gap-2" onSubmit={load}>
+      <h2 className="m-0 text-sm font-medium">
+        <label htmlFor="githubRepo">Load a public GitHub repository</label>
+      </h2>
+      <div className="flex gap-2">
+        <input
+          id="githubRepo"
+          value={repo}
+          onChange={(e) => setRepo(e.target.value)}
+          placeholder="github.com/owner/name"
+          autoComplete="off"
+          spellCheck={false}
+          className={`${fieldClass} min-w-0 flex-1 font-mono text-xs`}
+        />
+        <Button type="submit" variant="primary" disabled={!repo.trim() || loading}>
+          {loading ? 'Loading…' : 'Load'}
+        </Button>
+      </div>
+      <p className="m-0 text-xs text-muted" aria-live="polite">
+        {loading ? (
+          `Reading ${state.label} from GitHub… big repositories take up to 15 seconds.`
+        ) : state.status === 'error' ? (
+          <span role="alert" className="text-danger">{state.message}</span>
+        ) : (
+          'The newest 2,000 commits plus every branch. File stats need the pasted log below.'
+        )}
+      </p>
+    </form>
+  )
+}
 
 export default function LoadPage({ model, error, onLoad, onLoadSample, onOpenGraph }) {
   const [text, setText] = useState('')
@@ -35,9 +97,17 @@ export default function LoadPage({ model, error, onLoad, onLoadSample, onOpenGra
         <div>
           <h1 className="m-0 text-2xl font-semibold leading-tight">See how your repository grew.</h1>
           <p className="m-0 mt-3 text-base leading-relaxed text-soft">
-            Paste your history and read it as a graph: where branches split, how far they drifted, who works on what. It all runs in
-            your browser.
+            Load a GitHub repository or paste your history, and read it as a graph: where branches split, how far they drifted, who
+            works on what.
           </p>
+        </div>
+
+        <GitHubLoader onLoad={onLoad} />
+
+        <div className="flex items-center gap-3 text-xs text-muted" aria-hidden="true">
+          <span className="h-px flex-1 bg-line" />
+          or paste the git log, for private repos and file stats
+          <span className="h-px flex-1 bg-line" />
         </div>
 
         <form
@@ -57,7 +127,7 @@ export default function LoadPage({ model, error, onLoad, onLoadSample, onOpenGra
               <CopyButton text={GIT_LOG_COMMAND} label="Copy command" className="border-transparent bg-transparent" />
             </div>
             <p className="m-0 text-xs text-muted">
-              Big history? Add <code className="font-mono text-soft">-n 500</code> for the latest 500 commits.
+              Huge history? Add <code className="font-mono text-soft">-n 50000</code> for the latest 50,000 commits.
             </p>
           </div>
 

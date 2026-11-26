@@ -20,10 +20,13 @@ const sampleModel = (id) => {
   return buildModel(s.text(), s.name)
 }
 
+// a loaded history plus where it came from: { source: 'github', truncated } for a GitHub link, nothing for a paste
+const withMeta = (model, meta = {}) => Object.assign(model, { source: meta.source ?? 'log', truncated: !!meta.truncated })
+
 function initialModel() {
   try {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null')
-    if (saved?.text) return buildModel(saved.text, saved.name)
+    if (saved?.text) return withMeta(buildModel(saved.text, saved.name), saved)
     if (saved?.sample) return sampleModel(saved.sample)
   } catch {
     /* fall back to the default sample */
@@ -52,12 +55,12 @@ export default function App() {
     setTab('graph')
   }
 
-  const loadText = (text, name) => {
+  const loadText = (text, name, meta = {}) => {
     try {
-      const next = buildModel(text, name)
+      const next = withMeta(buildModel(text, name), meta)
       try {
         // browsers keep about 5 MB per site: a bigger log can't be saved, so don't spend time trying
-        if (text.length < SAVE_LIMIT) localStorage.setItem(STORAGE_KEY, JSON.stringify({ text, name }))
+        if (text.length < SAVE_LIMIT) localStorage.setItem(STORAGE_KEY, JSON.stringify({ text, name, source: next.source, truncated: next.truncated }))
         else localStorage.removeItem(STORAGE_KEY)
       } catch {
         /* storage full or unavailable: still works for this session */

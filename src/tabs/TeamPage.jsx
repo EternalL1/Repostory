@@ -169,7 +169,11 @@ export default function TeamPage({ model }) {
 
         <Section title="Hotspots" note="Files that change most often attract bugs and merge conflicts.">
           {hot.length === 0 ? (
-            <p className="m-0 text-sm text-muted">No file data. Run the git command with --name-only to see hotspots.</p>
+            <p className="m-0 text-sm text-muted">
+              {model.source === 'github'
+                ? 'File lists aren’t loaded for GitHub links. Paste the git log on the Load tab to see hotspots.'
+                : 'No file data. Run the git command with --name-only to see hotspots.'}
+            </p>
           ) : (
             <table className="w-full table-fixed border-collapse text-left">
               <thead>
