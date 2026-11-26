@@ -250,8 +250,9 @@ describe.each(['memory', 'postgres'] as const)('with the %s store', (backend) =>
       expect((await send(JSON.stringify({ event: 'drop table' }))).status).toBe(400)
       expect((await send('not json')).status).toBe(400)
       expect((await send(JSON.stringify({ event: 'load_github', pad: 'x'.repeat(300) }))).status).toBe(400)
-      expect(await eventCounts(today)).toEqual([{ day: today, event: 'load_github', count: 1 }])
       expect(EVENTS).toContain('share_created')
+      expect((await send(JSON.stringify({ event: 'share_people_left_out' }))).status).toBe(204)
+      expect((await eventCounts(today)).map((r) => r.event).sort()).toEqual(['load_github', 'share_people_left_out'])
     })
 
     it('counts a share link when one is saved', async () => {

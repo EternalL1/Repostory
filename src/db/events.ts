@@ -11,6 +11,7 @@ export const EVENTS = [
   'story_finished', // the Story played to its last slide, on the Story tab
   'shared_story_finished', // the same, on a shared link's page
   'share_created', // a share link made (counted by the server when it saves one)
+  'share_people_left_out', // a share link made with someone left out under People in this Story (sent by the browser)
 ] as const
 export type ProductEvent = (typeof EVENTS)[number]
 

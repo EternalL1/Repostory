@@ -170,6 +170,7 @@ funnel behind it (own repository loaded → Story finished → shared), this wee
 | `load_sample`, `load_paste`, `load_github` | A repository is loaded on the Load tab |
 | `story_finished`, `shared_story_finished` | The Story reaches its last slide, on the Story tab or a shared link's page |
 | `share_created` | The server saves a share link |
+| `share_people_left_out` | A share link is made with someone left out under People in this Story |
 
 The browser sends an event's name to `POST /kpi/event`, outside `/api/` so it never uses up a visitor's rate limit there;
 unknown names are refused. Only the live site counts: previews share its database. Traffic, referrers and views of

@@ -29,6 +29,7 @@ const pct = (part, whole) => (whole ? `${Math.round((part / whole) * 100)}%` : '
 
 const lines = [
   ['Shares created (main KPI)', ['share_created']],
+  ['   with people left out', ['share_people_left_out']],
   ['Own repo loaded (paste + GitHub)', ['load_paste', 'load_github']],
   ['   pasted git log', ['load_paste']],
   ['   GitHub link', ['load_github']],

@@ -236,7 +236,7 @@ const LinkIcon = () => <Icon size={16}><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0
 const list = (items) => items.join(', ')
 
 /** Asks before anything leaves the browser: lists exactly what a share link stores, then hands over the link. */
-function SharePanel({ stats, onClose }) {
+function SharePanel({ stats, onClose, peopleLeftOut = false }) {
   const [state, setState] = useState({ status: 'idle' })
 
   const create = async () => {
@@ -246,6 +246,8 @@ function SharePanel({ stats, onClose }) {
       const data = await res.json().catch(() => ({}))
       if (!res.ok) throw new Error(data.error || 'Could not create the link.')
       rememberToken(data.slug, data.deleteToken)
+      // a supporting number for the main KPI: how many shares leave people out
+      if (peopleLeftOut) count('share_people_left_out')
       setState({ status: 'done', slug: data.slug, url: `${window.location.origin}/w/${data.slug}`, expiresAt: data.expiresAt })
     } catch (e) {
       setState({ status: 'error', message: e.message })
@@ -404,11 +406,12 @@ export default function StoryPage({ model }) {
     if (!removed.size || !keep.length || keep.length === people.length) return storyStats(model)
     return storyStats(onlyAuthors(model, new Set(keep)))
   }, [model, people, removed])
-  return <StoryView stats={stats} people={<PeoplePicker people={people} removed={removed} onChange={setRemoved} />} />
+  const leftOut = removed.size > 0 && people.some((p) => removed.has(p.name))
+  return <StoryView stats={stats} peopleLeftOut={leftOut} people={<PeoplePicker people={people} removed={removed} onChange={setRemoved} />} />
 }
 
 /** The Story's landing: intro, chapters, the summary card, and the player. `shared` = opened from a /w/ link. */
-export function StoryView({ stats, shared = false, people = null }) {
+export function StoryView({ stats, shared = false, people = null, peopleLeftOut = false }) {
   const [open, setOpen] = useState(false)
   const [saving, setSaving] = useState(false)
   const [sharing, setSharing] = useState(false)
@@ -455,7 +458,7 @@ export function StoryView({ stats, shared = false, people = null }) {
             </Button>
           )}
         </div>
-        {sharing && <SharePanel stats={stats} onClose={() => setSharing(false)} />}
+        {sharing && <SharePanel stats={stats} peopleLeftOut={peopleLeftOut} onClose={() => setSharing(false)} />}
         {!shared && people}
         <ol className="m-0 mt-8 flex list-none flex-wrap gap-1.5 p-0">
           {chapters.map((c, i) => (
