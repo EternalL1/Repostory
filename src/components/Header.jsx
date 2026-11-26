@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { PixelLogo } from './pixel.jsx'
+import { PixelLogo } from './pixel'
 
 export const TABS = [
   { id: 'load', label: 'Load' },

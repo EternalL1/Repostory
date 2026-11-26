@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
-import { formatDate, shortHash } from '../lib/git.js'
-import { COL, laneColor } from '../lib/theme.js'
-import { Badge, RefChip } from './ui.jsx'
+import { formatDate, shortHash } from '../lib/git'
+import { COL, laneColor } from '../lib/theme'
+import { Badge, RefChip } from './ui'
 
 const ROW = 36 // px, matches h-9
 const LANE = 18

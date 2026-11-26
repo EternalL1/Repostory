@@ -1,9 +1,9 @@
 // The Story's slides. Sizes are in cqw (percent of the card's width), so a slide reads the same full-screen on a
 // phone, in the desktop player and in the small poster on the Story tab.
 import { createContext, useContext, useEffect, useRef, useState } from 'react'
-import { PixelBolt, PixelFire, PixelLogo } from '../pixel.jsx'
-import { fmt, MONTHS, shortDay } from '../../lib/story.js'
-import { Identicon, STORY_LANES } from './art.jsx'
+import { PixelBolt, PixelFire, PixelLogo } from '../pixel'
+import { fmt, MONTHS, shortDay } from '../../lib/story'
+import { Identicon, STORY_LANES } from './art'
 
 export const u = (n) => `${n}cqw`
 const d = (ms) => ({ '--d': `${ms}ms` })

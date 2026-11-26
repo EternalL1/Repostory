@@ -1,8 +1,0 @@
-@import "tailwindcss";
-@import "./theme.css";
-
-body {
-  margin: 0;
-  background: var(--color-ink);
-  transition: background-color 200ms ease;
-}

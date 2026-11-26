@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { COL, laneColor, tint } from '../lib/theme.js'
+import { COL, laneColor, tint } from '../lib/theme'
 
 // Type scale (after GitHub Primer): 12 meta/data · 14 body · 16 titles · 24 statements, normal letter-spacing.
 // Color is for data; chrome stays neutral.
