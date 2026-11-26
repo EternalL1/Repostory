@@ -29,8 +29,9 @@ npm run dev      # http://localhost:5173
 npm test         # Vitest: graph algorithms, the snapshot schema, the share store (in memory and on PGlite) and API
 ```
 
-Everything runs from the repository root; there is no inner app folder. Without `DATABASE_URL`, share links work
-locally but live in memory until the dev server restarts.
+Everything runs from the repository root; there is no inner app folder. In local development, share links live in
+memory until the dev server restarts, even after `vercel env pull` has saved the real database to `.env.local`. To use
+the real Neon database locally, start with `USE_NEON_IN_DEV=1 npm run dev`.
 
 ## Sample repos
 

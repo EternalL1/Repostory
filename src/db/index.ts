@@ -9,10 +9,14 @@ export type Db = PgDatabase<PgQueryResultHKT, typeof schema>
 let db: Db | null = null
 let testDb: Db | null | undefined
 
-/** The Neon database, or null when DATABASE_URL is not set (local development without a database). */
+/**
+ * The Neon database, or null for the in-memory store: when DATABASE_URL is not set, and in local development unless
+ * USE_NEON_IN_DEV=1 (`vercel env pull` puts the real database in .env.local, and local testing shouldn't write to it).
+ */
 export function getDb(): Db | null {
   if (testDb !== undefined) return testDb
   if (!process.env.DATABASE_URL) return null
+  if (process.env.NODE_ENV === 'development' && process.env.USE_NEON_IN_DEV !== '1') return null
   db ??= drizzle(neon(process.env.DATABASE_URL), { schema }) as unknown as Db
   return db
 }
