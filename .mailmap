@@ -1,0 +1,3 @@
+# One person, two git setups (Mac and PC): count every commit under one name.
+# git log %aN, git shortlog and Repostory's import all read this file.
+EternalL1 <panajohnluke@gmail.com> Eternall <panajohnluke@gmail.com>
