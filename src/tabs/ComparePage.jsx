@@ -26,6 +26,9 @@ function Side({ id, label, color, value, options, onChange }) {
   )
 }
 
+// a side can hold tens of thousands of commits on a big repo; the list shows the newest, the graph shows them all
+const LIST_LIMIT = 300
+
 function CommitList({ title, color, commits, empty }) {
   return (
     <section className="border-b border-line px-5 py-4">
@@ -38,12 +41,17 @@ function CommitList({ title, color, commits, empty }) {
         <p className="m-0 text-xs text-muted">{empty}</p>
       ) : (
         <ul className="m-0 max-h-60 list-none overflow-auto p-0">
-          {commits.map((c) => (
+          {commits.slice(0, LIST_LIMIT).map((c) => (
             <li key={c.hash} className="flex items-baseline gap-2.5 py-1">
               <span className="font-mono text-xs" style={{ color }}>{shortHash(c.hash)}</span>
               <span className="min-w-0 flex-1 truncate text-sm">{c.subject}</span>
             </li>
           ))}
+          {commits.length > LIST_LIMIT && (
+            <li className="py-1.5 text-xs text-muted">
+              and {(commits.length - LIST_LIMIT).toLocaleString('en-US')} more, all marked in the graph
+            </li>
+          )}
         </ul>
       )}
     </section>

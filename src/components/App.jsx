@@ -13,6 +13,7 @@ import TeamPage from '../tabs/TeamPage'
 // keys keep the app's earlier name on purpose: renaming them would wipe every visitor's saved repo and theme
 const STORAGE_KEY = 'repograph.lastRepo'
 const DEFAULT_SAMPLE = 'storefront'
+const SAVE_LIMIT = 4_000_000 // characters; about 20,000 commits
 
 const sampleModel = (id) => {
   const s = SAMPLES.find((x) => x.id === id) || SAMPLES.find((x) => x.id === DEFAULT_SAMPLE)
@@ -55,7 +56,9 @@ export default function App() {
     try {
       const next = buildModel(text, name)
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify({ text, name }))
+        // browsers keep about 5 MB per site: a bigger log can't be saved, so don't spend time trying
+        if (text.length < SAVE_LIMIT) localStorage.setItem(STORAGE_KEY, JSON.stringify({ text, name }))
+        else localStorage.removeItem(STORAGE_KEY)
       } catch {
         /* storage full or unavailable: still works for this session */
       }
