@@ -61,6 +61,8 @@ Histories of any size work: 50,000 commits load in about 0.3 s. For 100,000+ com
   repository name, up to 5 contributor names, up to 5 file paths, the most common first word of commit messages, the
   busiest branch flow, and counts and dates. Never the log, commit messages or the rest of the files.
 - Share links expire after a year. Whoever made one can delete it from its page in the same browser.
+- Visits are counted with Vercel Web Analytics: page views, referrers and rough location, without cookies. Nothing
+  from a loaded repository is sent to it.
 
 ## Run it locally
 
@@ -79,6 +81,9 @@ npm run dev      # http://localhost:5173
 | `npm run build` / `npm start` | Production build, and serving it on port 5173 |
 | `npm run db:generate` | Write a SQL migration from `src/db/schema.ts` into `drizzle/` |
 | `npm run db:migrate` | Apply migrations to the database in `DATABASE_URL` (reads `.env.local`, uses the direct connection) |
+
+Every push and pull request runs the typecheck, the tests and a production build on GitHub Actions
+(`.github/workflows/ci.yml`); a failure shows as a red ✗ on the commit.
 
 Locally, share links live in memory until the dev server restarts, even when `.env.local` holds the real database.
 Start with `USE_NEON_IN_DEV=1 npm run dev` to use it. GitHub links need `GITHUB_TOKEN` in the environment.
@@ -104,6 +109,7 @@ First-time setup:
 3. Add `CRON_SECRET` and `GITHUB_TOKEN`.
 4. **Firewall → Rate limit**: one rule for paths starting with `/api/`, 10 requests a minute per IP, any method. Hobby
    allows one rule; this one covers share links, deletes and GitHub loading.
+5. **Analytics → Enable** (Web Analytics). The `<Analytics />` component in `src/app/layout.tsx` starts reporting then.
 
 ## How it works
 
@@ -227,7 +233,7 @@ Mona Sans and Monaspace Neon (OFL), bundled through fontsource.
 ## Roadmap
 
 - **Sign in with GitHub:** private repositories, and file stats for links, each person on their own GitHub limit.
-- **Before a public launch:** a privacy note with a takedown contact, tests running on every push, usage analytics.
+- **Before a public launch:** a privacy note with a takedown contact.
 - Opening a local folder directly.
 
 ## Graph theory notes

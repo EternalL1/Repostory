@@ -1,0 +1,29 @@
+# Runs on every push and pull request: the same checks as a local `npm run typecheck && npm test && npm run build`.
+# Vercel deploys separately; a failure here shows as a red ✗ on the commit and emails the author.
+name: CI
+
+on:
+  push:
+  pull_request:
+
+# a newer push to the same branch cancels the older run
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Typecheck, test, build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      # no database or GitHub token needed: the build doesn't connect to either
+      - run: npm run build

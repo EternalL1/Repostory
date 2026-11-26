@@ -1,3 +1,4 @@
+import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
 // Bundled fonts (GitHub's open-source Mona Sans + Monaspace Neon, OFL): same look on every OS, served locally
 import '@fontsource-variable/mona-sans'
@@ -36,7 +37,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
-      <body>{children}</body>
+      <body>
+        {children}
+        {/* Vercel Web Analytics: page views and visitors, no cookies; does nothing until enabled in the Vercel project */}
+        <Analytics />
+      </body>
     </html>
   )
 }
