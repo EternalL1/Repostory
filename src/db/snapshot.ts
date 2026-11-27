@@ -2,7 +2,7 @@
 // our domain, so every string from the user's repo (repo name, people, paths, branches) has a hard length limit, and
 // everything Repostory itself words (persona, weekday, month) must be one of its own values.
 import { z } from 'zod'
-import type { StorySnapshot } from '../lib/story'
+import { BUSIEST_PEOPLE, type StorySnapshot } from '../lib/story'
 
 /** Bump when StorySnapshot changes shape; getShare upgrades or refuses older rows. */
 export const SNAPSHOT_VERSION = 1
@@ -12,6 +12,7 @@ const ts = z.number().int().nonnegative() // a calendar day as epoch ms
 const ratio = z.number().min(0).max(1)
 const text = (max: number) => z.string().max(max)
 const months = z.array(count).length(12)
+const clock = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/)
 
 const PERSONAS = ['Night Owl', 'Early Bird', 'Morning Maker', 'Daytime Shipper', 'Evening Hacker'] as const
 const WEEKDAYS = ['Sundays', 'Mondays', 'Tuesdays', 'Wednesdays', 'Thursdays', 'Fridays', 'Saturdays'] as const
@@ -34,7 +35,17 @@ export const snapshotSchema = z.object({
   perDay: z.number().nonnegative().max(1e6),
   activeDays: count,
   streak: count,
-  busiest: z.object({ label: text(40), count }).nullable(),
+  // first, last, crew and people came later: shares made before them have only the label and count
+  busiest: z
+    .object({
+      label: text(40),
+      count,
+      first: clock.optional(),
+      last: clock.optional(),
+      crew: count.optional(),
+      people: z.array(z.object({ name: text(100).min(1), commits: count })).max(BUSIEST_PEOPLE).optional(),
+    })
+    .nullable(),
   hours: z.array(count).length(24),
   peakHour: z.number().int().min(0).max(23),
   peakHourLabel: z.string().regex(/^\d{2}:00$/),

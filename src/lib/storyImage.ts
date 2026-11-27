@@ -1,6 +1,8 @@
 // Draws the Story's summary poster to a 1080×1920 PNG (the size stories use), mirroring the Summary slide.
-import { identiconCells, identiconColor, STORY_LANES } from '../components/story/art'
-import { fileLabels, fmt, type StoryStats } from './story'
+import { STORY_LANES } from '../components/story/art'
+import { GREENS } from '../components/story/CalendarGrid'
+import { WALL, wallHeight } from '../components/story/slides'
+import { fileLabels, fmt, type StoryStats, wallLayout } from './story'
 
 const W = 1080
 const H = 1920
@@ -26,14 +28,6 @@ function fitPath(ctx: CanvasRenderingContext2D, label: string, max: number): str
   let folder = label.slice(0, cut - 1)
   while (folder.length > 1 && ctx.measureText(`${folder}…/${name}`).width > max) folder = folder.slice(0, -1)
   return ctx.measureText(`${folder}…/${name}`).width <= max ? `${folder}…/${name}` : fit(ctx, name, max)
-}
-
-function identicon(ctx: CanvasRenderingContext2D, name: string, x: number, y: number, size: number) {
-  const px = size / 7
-  ctx.fillStyle = '#0b0d12'
-  ctx.fillRect(x, y, size, size)
-  ctx.fillStyle = identiconColor(name)
-  identiconCells(name).forEach((row: boolean[], j: number) => row.forEach((on, i) => on && ctx.fillRect(x + (i + 1) * px, y + (j + 1) * px, Math.ceil(px), Math.ceil(px))))
 }
 
 export async function renderSummaryPng(s: StoryStats): Promise<Blob | null> {
@@ -63,32 +57,38 @@ export async function renderSummaryPng(s: StoryStats): Promise<Blob | null> {
   ctx.fillText(s.year, W - pad, y)
   ctx.textAlign = 'left'
 
-  // hero
-  y += 3 * U
-  const heroH = 52 * U
-  const heroW = W - pad * 2
-  ctx.fillStyle = '#0b0d12'
-  ctx.fillRect(pad, y, heroW, heroH)
-  const cell = heroW / 30
-  for (let j = 0; j < Math.ceil(heroH / cell); j++) {
-    for (let i = 0; i < 30; i++) {
-      const k = (i * 7 + j * 13 + i * j) % 11
-      if (k >= 3) continue
-      ctx.globalAlpha = 0.25 + k * 0.2
-      ctx.fillStyle = STORY_LANES[(i + j) % STORY_LANES.length]
-      ctx.fillRect(pad + i * cell, y + j * cell, Math.ceil(cell), Math.min(Math.ceil(cell), y + heroH - (y + j * cell)))
-    }
-  }
-  ctx.globalAlpha = 1
-  if (s.top[0]) {
-    const size = 38 * U
-    const ix = (W - size) / 2
-    const iy = y + (heroH - size) / 2
+  // hero: the contribution wall, as the slide draws it
+  if (s.cal) {
+    y += 3 * U
+    const layout = wallLayout(s.cal.weeks.length, WALL.w / WALL.h)
+    const { cols, rows } = layout
+    const boxW = WALL.w * U
+    const boxH = wallHeight(layout) * U
+    // padding, the wall, the caption line (2.4 gap + 3.6 line) and the bottom padding, as on the slide
+    const heroH = WALL.pad * U + boxH + 6 * U + 3 * U
     ctx.fillStyle = '#0b0d12'
-    ctx.fillRect(ix - 1.2 * U, iy - 1.2 * U, size + 2.4 * U, size + 2.4 * U)
-    identicon(ctx, s.top[0].name, ix, iy, size)
+    ctx.fillRect(pad, y, W - pad * 2, heroH)
+    const pitch = Math.min(boxW / cols, boxH / rows)
+    const x0 = pad + WALL.pad * U + (boxW - cols * pitch) / 2
+    const y0 = y + WALL.pad * U + (boxH - rows * pitch) / 2
+    s.cal.weeks.forEach((week, i) => week.forEach((c, k) => {
+      if (c.out) return
+      ctx.fillStyle = GREENS[c.level]
+      ctx.fillRect(x0 + (i % cols) * pitch, y0 + (Math.floor(i / cols) * 8 + k) * pitch, pitch * 0.82, pitch * 0.82)
+    }))
+    ctx.font = `700 ${3 * U}px ${MONO}`
+    const days = fmt(s.cal.activeDays)
+    const cy = y + heroH - 3 * U - 0.6 * U
+    ctx.fillStyle = GREENS[4]
+    ctx.fillText(days, pad + 4 * U, cy)
+    const dx = ctx.measureText(`${days} `).width
+    ctx.font = `500 ${3 * U}px ${MONO}`
+    ctx.fillStyle = 'rgba(255,255,255,0.7)'
+    ctx.fillText(s.cal.activeDays === 1 ? 'day in the green' : 'days in the green', pad + 4 * U + dx, cy)
+    y += heroH + 7 * U
+  } else {
+    y += 3 * U
   }
-  y += heroH + 7 * U
 
   // two columns
   const colW = (W - pad * 2 - 5 * U) / 2

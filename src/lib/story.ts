@@ -184,6 +184,59 @@ export function fileLabels(paths: string[]): string[] {
 
 export const fmt = (n: number) => n.toLocaleString('en-US')
 
+/**
+ * The Summary's contribution wall: the whole calendar, week columns folded into bands so it fills a box of
+ * `aspect` (width ÷ height) whatever the history's length. In units of one square plus its gap, the wall is `cols`
+ * wide and `bands * 8 - 1` tall (a blank row between bands); week i sits in band ⌊i / cols⌋, column i % cols.
+ */
+export function wallLayout(weeks: number, aspect: number) {
+  let best = { bands: 1, cols: Math.max(1, weeks), pitch: 0 }
+  for (let bands = 1; bands <= weeks; bands++) {
+    const cols = Math.ceil(weeks / bands)
+    const pitch = Math.min(aspect / cols, 1 / (bands * 8 - 1)) // the square's size, with the box 1 tall
+    if (pitch > best.pitch) best = { bands, cols, pitch }
+    if (cols === 1) break
+  }
+  return { bands: best.bands, cols: best.cols, rows: best.bands * 8 - 1 }
+}
+
+/** People named on the biggest day, most commits first; `crew` counts everyone. */
+export const BUSIEST_PEOPLE = 6
+
+/**
+ * The biggest day: its date and count, and (since shares can be older than these) who committed that day and how
+ * much, and its first and last commit times on each author's own clock.
+ */
+export type Busiest = {
+  label: string
+  count: number
+  first?: string
+  last?: string
+  crew?: number
+  people?: { name: string; commits: number }[]
+}
+
+function busiestDay(model: Model, day: number, count: number): Busiest {
+  const iso = new Date(day).toISOString().slice(0, 10)
+  const by = new Map<string, number>()
+  const times: string[] = []
+  for (const c of model.order) {
+    if (!c.date?.startsWith(iso)) continue
+    by.set(c.author, (by.get(c.author) || 0) + 1)
+    const t = c.date.slice(11, 16)
+    if (/^\d{2}:\d{2}$/.test(t)) times.push(t)
+  }
+  times.sort()
+  const people = [...by].map(([name, commits]) => ({ name, commits })).sort((a, b) => b.commits - a.commits || a.name.localeCompare(b.name))
+  return {
+    label: dayName(day),
+    count,
+    ...(times.length && { first: times[0], last: times.at(-1) }),
+    crew: people.length,
+    people: people.slice(0, BUSIEST_PEOPLE),
+  }
+}
+
 /** Everything the Story's slides show, in one object. */
 export function storyStats(model: Model) {
   const team = teamStats(model)
@@ -243,7 +296,7 @@ export function storyStats(model: Model) {
     perDay: commits / spanDays,
     activeDays: days.activeDays,
     streak: days.streak,
-    busiest: days.busiest ? { label: dayName(days.busiest.day), count: days.busiest.count } : null,
+    busiest: days.busiest ? busiestDay(model, days.busiest.day, days.busiest.count) : (null as Busiest | null),
     hours,
     peakHour,
     peakHourLabel: `${pad2(peakHour)}:00`,

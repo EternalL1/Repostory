@@ -44,6 +44,82 @@
   animation: story-grow 700ms var(--ease-out-strong) both;
   animation-delay: var(--d, 0ms);
 }
+/* Biggest day: the calendar page swings down from its rings onto the desk, the stamp lands, people are pinned on */
+@keyframes story-drop {
+  from { opacity: 0; transform: perspective(60cqw) rotateX(-55deg) translateY(-6cqw); }
+}
+@keyframes story-stamp {
+  from { opacity: 0; transform: rotate(-9deg) scale(1.35); }
+}
+@keyframes story-pin {
+  from { opacity: 0; transform: rotate(calc(var(--r, 0deg) * 2.5)) translateY(-5cqw) scale(1.06); }
+}
+/* Contributors: the trophy rises and one shine sweeps across it; the rays settle; podium blocks rise */
+@keyframes story-trophy {
+  from { opacity: 0; transform: translateY(10cqw) scale(0.92); }
+}
+@keyframes story-shine {
+  from { transform: translateX(-120%); }
+  to { transform: translateX(120%); }
+}
+@keyframes story-rays {
+  from { opacity: 0; transform: rotate(-20deg) scale(0.9); }
+}
+@keyframes story-banner {
+  from { clip-path: inset(0 100% 0 0); }
+  to { clip-path: inset(0 0 0 0); }
+}
+@keyframes story-block {
+  from { opacity: 0.4; transform: scaleY(0.1); }
+}
+
+.story-drop {
+  transform-origin: 50% 0;
+  animation: story-drop 520ms var(--ease-out-strong) both;
+  animation-delay: var(--d, 0ms);
+}
+.story-stamp {
+  transform: rotate(-9deg);
+  animation: story-stamp 260ms var(--ease-out-strong) both;
+  animation-delay: var(--d, 0ms);
+}
+.story-pin {
+  transform: rotate(var(--r, 0deg));
+  animation: story-pin 360ms var(--ease-out-strong) both;
+  animation-delay: var(--d, 0ms);
+}
+.story-trophy {
+  animation: story-trophy 520ms var(--ease-out-strong) both;
+  animation-delay: var(--d, 0ms);
+}
+.story-shine {
+  background: linear-gradient(105deg, transparent 35%, rgba(255, 255, 255, 0.75) 50%, transparent 65%);
+  transform: translateX(-120%);
+  animation: story-shine 700ms var(--ease-in-out-strong) both;
+  animation-delay: var(--d, 0ms);
+}
+.story-rays {
+  animation: story-rays 900ms var(--ease-out-strong) both;
+}
+/* types on in six steps, like a game banner */
+.story-banner {
+  animation: story-banner 400ms steps(6, end) both;
+  animation-delay: var(--d, 0ms);
+}
+.story-block {
+  transform-origin: 50% 100%;
+  animation: story-block 520ms var(--ease-out-strong) both;
+  animation-delay: var(--d, 0ms);
+}
+
+.story-paused .story-drop,
+.story-paused .story-stamp,
+.story-paused .story-pin,
+.story-paused .story-trophy,
+.story-paused .story-shine,
+.story-paused .story-rays,
+.story-paused .story-banner,
+.story-paused .story-block,
 .story-paused .story-backdrop,
 .story-paused .story-rise,
 .story-paused .story-pop,
@@ -62,4 +138,21 @@
   .story-backdrop {
     animation-delay: 0ms !important;
   }
+  /* no swinging, sliding or rising: these just fade in (at their rest pose, so the stamp keeps its tilt) */
+  .story-drop,
+  .story-stamp,
+  .story-pin,
+  .story-trophy,
+  .story-rays,
+  .story-banner,
+  .story-block {
+    animation-name: story-fade;
+    animation-delay: 0ms !important;
+  }
+  .story-shine {
+    display: none;
+  }
+}
+@keyframes story-fade {
+  from { opacity: 0; }
 }

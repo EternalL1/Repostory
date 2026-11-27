@@ -47,6 +47,21 @@ describe('parseSnapshot', () => {
     expect(typeof parseSnapshot(input)).toBe('object')
   })
 
+  it('still reads shares made before the biggest day named its people and times', () => {
+    const input = statsOf('android')
+    input.busiest = { label: input.busiest.label, count: input.busiest.count }
+    expect(parseSnapshot(input)).toEqual(input)
+  })
+
+  it('refuses a biggest day with a made-up time or too many people', () => {
+    const time = statsOf('android')
+    time.busiest.first = '25:00'
+    expect(parseSnapshot(time)).toMatch(/^Invalid busiest\.first/)
+    const crowd = statsOf('android')
+    crowd.busiest.people = Array.from({ length: 7 }, (_, i) => ({ name: `P${i}`, commits: 1 }))
+    expect(parseSnapshot(crowd)).toMatch(/^Invalid busiest\.people/)
+  })
+
   it('drops the expanded calendar if a client sends one', () => {
     const input = { ...statsOf('android'), cal: { weeks: [] } }
     expect(parseSnapshot(input)).not.toHaveProperty('cal')

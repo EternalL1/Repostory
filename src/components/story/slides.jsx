@@ -1,11 +1,12 @@
 // The Story's slides. Sizes are in cqw (percent of the card's width), so a slide reads the same full-screen on a
 // phone, in the desktop player and in the small poster on the Story tab.
 import { useContext, useEffect, useRef, useState } from 'react'
-import { PixelBolt, PixelFire, PixelLogo } from '../pixel'
-import { fileLabels, fmt, MONTHS, shortDay } from '../../lib/story'
-import { Identicon, STORY_LANES } from './art'
+import { PixelFire, PixelLogo } from '../pixel'
+import { fileLabels, fmt, shortDay, wallLayout } from '../../lib/story'
+import { Identicon } from './art'
 import CalendarGrid, { GREENS } from './CalendarGrid'
 import { StoryPaused } from './context'
+import { PixelPage, PixelTrophy } from './pixelArt'
 
 export const u = (n) => `${n}cqw`
 const d = (ms) => ({ '--d': `${ms}ms` })
@@ -102,17 +103,81 @@ function Commits({ s }) {
   )
 }
 
+// The biggest day's ink: a rubber stamp in magenta, and the desk the calendar page sits on
+const STAMP = '#d6286b'
+const desk = { backgroundImage: 'radial-gradient(rgba(120,70,0,0.12) 0.35cqw, transparent 0.4cqw)', backgroundSize: `${u(4)} ${u(4)}` }
+
+/** "Monday, Apr 6" as the parts a calendar page prints. */
+function pageOf(label) {
+  const [weekday, md = ''] = label.split(', ')
+  const [month = '', num = ''] = md.split(' ')
+  return { weekday: weekday.toUpperCase(), month: month.toUpperCase(), num, label: `${weekday}, ${month} ${num}` }
+}
+
+const Stamp = ({ top, bottom, delay, size = 4.6, style }) => (
+  <div
+    className="story-stamp absolute text-center font-mono font-medium uppercase"
+    style={{ ...d(delay), border: `${u(0.9)} solid ${STAMP}`, color: STAMP, borderRadius: u(1), padding: `${u(1.4)} ${u(3)}`, fontSize: u(size), lineHeight: 1.05, letterSpacing: '0.06em', background: 'rgba(255,250,240,0.8)', ...style }}
+  >
+    {top}
+    <div style={{ fontSize: u(2.6), letterSpacing: '0.12em', marginTop: u(0.6) }}>{bottom}</div>
+  </div>
+)
+
+/** The biggest day as a pixel desk-calendar page: stamped with its count, and with everyone pinned around it when it took more than one person. */
 function Busiest({ s }) {
-  return (
-    <Center>
-      <div className="story-pop" style={{ marginBottom: u(6) }}>
-        <PixelBolt size={56} />
+  const b = s.busiest
+  const page = pageOf(b.label)
+  const crew = b.people && b.crew >= 2 ? b.people.slice(0, 4) : null
+  if (crew) {
+    const tilt = [-6, 5, -3, 7]
+    const spots = [[10, 90], [54, 88], [12, 130], [54, 128]] // left and top in cqw: a 2×2 under the page
+    return (
+      <div className="absolute inset-0 overflow-hidden" style={desk}>
+        <div className="absolute inset-x-0" style={{ top: u(20), padding: `0 ${u(8)}` }}>
+          <Headline size={9} className="text-left">{b.crew === 2 ? 'Two of you, one big day' : 'All hands on deck'}</Headline>
+        </div>
+        <div className="story-drop absolute" style={{ ...d(150), left: u(8), top: u(40), width: u(46) }} role="img" aria-label={page.label}>
+          <PixelPage month={page.month} num={page.num} weekday={page.weekday} />
+        </div>
+        <Stamp delay={600} size={5} top={`${b.count} commits`} bottom={`${b.crew} people`} style={{ left: u(52), top: u(52) }} />
+        {crew.map((p, i) => (
+          <div key={p.name} className="story-pin absolute" style={{ ...d(800 + i * 110), left: u(spots[i][0]), top: u(spots[i][1]), '--r': `${tilt[i]}deg` }}>
+            <div style={{ background: '#fffaf0', padding: `${u(1.6)} ${u(1.6)} ${u(1.4)}`, boxShadow: `${u(0.6)} ${u(1)} 0 rgba(90,50,0,0.25), 0 0 0 ${u(0.6)} currentColor` }}>
+              <Identicon name={p.name} style={{ width: u(22), height: u(22), display: 'block' }} />
+              <div className="flex items-baseline justify-between font-bold" style={{ fontSize: u(3.4), marginTop: u(1.4), gap: u(1), width: u(22) }}>
+                <span className="truncate">{firstName(p.name)}</span>
+                <span className="tabular-nums" style={{ color: STAMP }}>×{p.commits}</span>
+              </div>
+            </div>
+            {/* the pin */}
+            <span className="absolute block rounded-full" style={{ left: '50%', top: u(-1.6), width: u(3), height: u(3), marginLeft: u(-1.5), background: '#e5482a', boxShadow: `inset ${u(0.5)} ${u(0.5)} 0 #ff8a6a` }} />
+          </div>
+        ))}
+        {b.crew > crew.length && (
+          <p className="story-rise absolute inset-x-0 m-0 text-center font-bold" style={{ ...d(1300), top: u(166), fontSize: u(3.6) }}>
+            + {b.crew - crew.length} more
+          </p>
+        )}
       </div>
-      <Headline>
-        The biggest day was {s.busiest.label.replace(/ (\d+)$/, '\u00a0$1')} with {s.busiest.count} commits
-      </Headline>
-      <Sub delay={600}>Where did you find the time?</Sub>
-    </Center>
+    )
+  }
+  const who = b.people?.length === 1 ? firstName(b.people[0].name) : null
+  return (
+    <div className="absolute inset-0 overflow-hidden" style={desk}>
+      <div className="absolute inset-x-0 flex justify-center" style={{ top: u(34) }}>
+        <div className="story-drop relative" style={{ ...d(100), width: u(76) }} role="img" aria-label={page.label}>
+          <PixelPage month={page.month} num={page.num} weekday={page.weekday} />
+          <Stamp delay={750} top={`${b.count} commits`} bottom="biggest day" style={{ right: u(-6), bottom: u(-2) }} />
+        </div>
+      </div>
+      <div className="absolute inset-x-0 bottom-0 text-center" style={{ padding: `0 ${u(9)} ${u(16)}` }}>
+        <Headline delay={1000}>{who ? `${who}’s biggest day` : 'The biggest day'}</Headline>
+        <Sub delay={1150}>
+          {b.first && b.last && b.first !== b.last ? `${b.count} commits, ${b.first} to ${b.last}. ` : ''}Where did you find the time?
+        </Sub>
+      </div>
+    </div>
   )
 }
 
@@ -260,84 +325,81 @@ function Clock({ s, theme }) {
   )
 }
 
-function TopAuthors({ s }) {
+const PODIUM = [
+  // 1st in the middle; sized so the trophy clears the title on the shorter desktop card (9:16) too
+  { color: '#ffd23f', height: 48, avatar: 22 },
+  { color: '#cfd8d3', height: 38, avatar: 17 },
+  { color: '#e8a87c', height: 31, avatar: 17 },
+]
+
+/** Who made this: a podium for the top three, or an achievement when one person made all of it. */
+function Contributors({ s, theme }) {
+  const top = s.top.slice(0, 3)
+  if (top.length < 2) {
+    const a = s.top[0]
+    return (
+      <div className="absolute inset-0 overflow-hidden">
+        {/* rays behind the trophy, fading out from its middle */}
+        <div
+          aria-hidden="true"
+          className="story-rays absolute"
+          style={{ left: '50%', top: u(64), width: u(160), height: u(160), marginLeft: u(-80), marginTop: u(-80), borderRadius: '50%', background: 'repeating-conic-gradient(rgba(255,210,63,0.13) 0 10deg, transparent 10deg 20deg)', maskImage: 'radial-gradient(closest-side, #000 30%, transparent)', WebkitMaskImage: 'radial-gradient(closest-side, #000 30%, transparent)' }}
+        />
+        <p className="story-banner absolute inset-x-0 m-0 text-center font-mono font-medium uppercase" style={{ ...d(0), top: u(24), fontSize: u(3.6), letterSpacing: '0.2em', color: theme.hot }}>
+          Achievement unlocked
+        </p>
+        <div className="story-trophy absolute" style={{ ...d(150), left: '50%', top: u(36), marginLeft: u(-25) }}>
+          <div className="relative overflow-hidden">
+            <PixelTrophy size={u(50)} />
+            <div aria-hidden="true" className="story-shine absolute inset-0" style={d(900)} />
+          </div>
+        </div>
+        <div className="absolute inset-x-0 bottom-0 text-center" style={{ padding: `0 ${u(9)} ${u(16)}` }}>
+          <Headline delay={700} size={11}>Solo act</Headline>
+          <p className="story-rise m-0 truncate font-extrabold" style={{ ...d(800), fontSize: u(7), marginTop: u(2), color: theme.hot }}>{a.name}</p>
+          <Sub delay={950}>All {fmt(a.commits)} commits, every one of them yours.</Sub>
+        </div>
+      </div>
+    )
+  }
+  const order = [1, 0, 2].filter((i) => top[i]) // 2nd, 1st, 3rd from the left
+  const rest = s.top.slice(3).map((a) => firstName(a.name))
+  const others = s.authors - s.top.length
+  const between = top.reduce((n, a) => n + a.share, 0)
+  const tail = [rest.length && `Then ${rest.join(' and ')}`, others > 0 && `${rest.length ? 'plus' : 'Plus'} ${fmt(others)} ${others === 1 ? 'other' : 'others'}`].filter(Boolean).join(', ')
   return (
-    <div className="relative flex h-full flex-col" style={{ padding: `${u(24)} ${u(8)} 0` }}>
-      <Headline size={8} className="text-left">Top contributors</Headline>
-      <ol className="m-0 list-none p-0" style={{ marginTop: u(7) }}>
-        {s.top.map((a, i) => (
-          <li key={a.name} className="story-rise flex items-center" style={{ ...d(250 + i * 140), gap: u(4), marginBottom: u(4.5) }}>
-            <span className="text-right font-extrabold tabular-nums" style={{ width: u(8), fontSize: u(11), lineHeight: 1 }}>
-              {i + 1}
-            </span>
-            <Identicon name={a.name} size={64} style={{ width: u(17), height: u(17) }} />
-            <span className="min-w-0">
-              <span className="block truncate font-bold" style={{ fontSize: u(5.2) }}>{a.name}</span>
-              <span className="block font-medium tabular-nums opacity-75" style={{ fontSize: u(3.6) }}>
-                {fmt(a.commits)} commits · {pct(a.share)}%
-              </span>
-            </span>
-          </li>
+    <div className="absolute inset-0 overflow-hidden">
+      <div className="absolute inset-x-0 text-center" style={{ top: u(18), padding: `0 ${u(8)}` }}>
+        <p className="story-rise m-0 font-mono font-medium uppercase" style={{ ...d(0), fontSize: u(3.4), letterSpacing: '0.2em', color: theme.hot }}>Top contributors</p>
+        <Headline delay={100} size={10}>The podium</Headline>
+      </div>
+      <div className="absolute flex items-end justify-center" style={{ left: u(6), right: u(6), bottom: u(40), gap: u(2) }}>
+        {order.map((i, k) => (
+          <div key={top[i].name} className="flex min-w-0 flex-col items-center" style={{ width: u(28) }}>
+            <div className="story-pin relative" style={d(700 + k * 120)}>
+              {i === 0 && (
+                <div className="absolute" style={{ left: '50%', top: u(-14), marginLeft: u(-6) }}>
+                  <PixelTrophy size={u(12)} />
+                </div>
+              )}
+              <Identicon name={top[i].name} bg="#0a2a1c" style={{ width: u(PODIUM[i].avatar), height: u(PODIUM[i].avatar), display: 'block' }} />
+            </div>
+            <div className="story-rise w-full truncate text-center font-bold" style={{ ...d(750 + k * 120), fontSize: u(4.2), marginTop: u(2) }}>{firstName(top[i].name)}</div>
+            <div className="story-block flex w-full flex-col items-center" style={{ ...d(300 + k * 120), height: u(PODIUM[i].height), marginTop: u(1.5), background: PODIUM[i].color, color: '#0a2a1c', borderRadius: `${u(1.5)} ${u(1.5)} 0 0` }}>
+              <span className="font-extrabold" style={{ fontSize: u(11), lineHeight: 1, marginTop: u(3) }}>{i + 1}</span>
+              <span className="font-bold tabular-nums" style={{ fontSize: u(3.6), marginTop: u(2.5) }}>{fmt(top[i].commits)} commits</span>
+              <span className="font-medium tabular-nums opacity-75" style={{ fontSize: u(3.2) }}>{pct(top[i].share)}%</span>
+            </div>
+          </div>
         ))}
-      </ol>
-    </div>
-  )
-}
-
-/** Months around a ring with the contributor's avatar in the middle; the peak month marked. */
-function MonthWheel({ name, months, peak, ink, ring, hot }) {
-  const max = Math.max(1, ...months)
-  return (
-    <div className="story-pop relative" style={{ ...d(200), width: u(72), height: u(72) }}>
-      <svg viewBox="0 0 100 100" className="absolute inset-0 h-full w-full" aria-hidden="true">
-        <circle cx="50" cy="50" r="40" fill="none" stroke={ring} strokeWidth="13" />
-        {months.map((n, m) => {
-          const a = ((m + 0.5) * 30 - 90) * (Math.PI / 180)
-          const x = 50 + Math.cos(a) * 40
-          const y = 50 + Math.sin(a) * 40
-          return (
-            <g key={m}>
-              {m === peak && <rect x={x - 6} y={y - 4} width="12" height="8" rx="1" fill={hot} />}
-              <text x={x} y={y + 1.5} textAnchor="middle" fontSize="4.2" fontWeight="800" fill={m === peak ? '#0b0d12' : ink}>
-                {MONTHS[m].toUpperCase()}
-              </text>
-              {/* this month's share, as a pixel tick inside the ring */}
-              <rect
-                x={50 + Math.cos(a) * 30 - 1.2}
-                y={50 + Math.sin(a) * 30 - 1.2}
-                width="2.4"
-                height="2.4"
-                fill={ink}
-                fillOpacity={0.15 + (n / max) * 0.85}
-              />
-            </g>
-          )
-        })}
-      </svg>
-      <div className="absolute inset-[30%] grid place-items-center">
-        <Identicon name={name} size={120} className="h-full w-full" />
+      </div>
+      <div className="absolute inset-x-0 bottom-0 text-center" style={{ padding: `0 ${u(9)} ${u(16)}` }}>
+        <Sub delay={1100}>
+          {tail ? `${tail}. ` : ''}
+          {top.length === 3 ? 'The top three' : 'The two of them'} made {pct(between)}% of every commit.
+        </Sub>
       </div>
     </div>
-  )
-}
-
-function Spotlight({ s, theme }) {
-  const a = s.top[0]
-  return (
-    <Center>
-      <Headline size={5} className="font-bold opacity-80">#1 contributor</Headline>
-      <Headline delay={100} size={9}>{a.name}</Headline>
-      <div style={{ margin: `${u(7)} 0 ${u(6)}` }}>
-        <MonthWheel name={a.name} months={a.months} peak={a.peakMonth} ink={theme.fg} ring={theme.ring} hot={theme.hot} />
-      </div>
-      <p className="story-rise m-0 font-medium opacity-80" style={{ ...d(500), fontSize: u(3.8) }}>{firstName(a.name)}'s peak month</p>
-      <p className="story-rise m-0 font-extrabold" style={{ ...d(600), fontSize: u(7) }}>
-        {['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'][a.peakMonth]}
-      </p>
-      <Sub delay={800} className="!mt-[2cqw]" bg={theme.bg}>
-        {fmt(a.commits)} commits, {pct(a.share)}% of everything. {firstName(a.name)} carried this one.
-      </Sub>
-    </Center>
   )
 }
 
@@ -382,31 +444,41 @@ function Word({ s }) {
 }
 
 /** The poster at the end: everything on one card. Also drawn to a PNG by lib/storyImage.js. */
+// The Summary hero's contribution wall, in cqw: as wide as the hero less its padding, at most WALL_H tall. A short
+// history is one strip and the hero shrinks around it. storyImage draws the same.
+export const WALL = { pad: 4, w: 78, h: 39 }
+export const wallHeight = ({ cols, rows }) => Math.min(WALL.h, (WALL.w * rows) / cols)
+
+/** Every week of the history as one wall of green squares, folded into bands to fill its box. */
+function ContributionWall({ weeks }) {
+  const layout = wallLayout(weeks.length, WALL.w / WALL.h)
+  const { cols, rows } = layout
+  return (
+    <svg viewBox={`0 0 ${cols} ${rows}`} shapeRendering="crispEdges" aria-hidden="true" className="w-full" style={{ height: u(wallHeight(layout)) }}>
+      {weeks.flatMap((week, i) =>
+        week.map((c, k) => (c.out ? null : <rect key={`${i}-${k}`} x={i % cols} y={Math.floor(i / cols) * 8 + k} width="0.82" height="0.82" fill={GREENS[c.level]} />)),
+      )}
+    </svg>
+  )
+}
+
 export function Summary({ s, animate = true, actions = false }) {
   const a = animate ? 'story-rise' : ''
-  const lead = s.top[0]
   return (
     <div className="relative flex h-full flex-col" style={{ padding: `${u(13)} ${u(7)} ${actions ? u(24) : u(6)}` }}>
       <div className={`${a} flex items-center justify-between font-mono`} style={{ ...d(0), fontSize: u(3.4) }}>
         <span className="truncate opacity-80">{s.name}</span>
         <span className="font-bold" style={{ color: '#b8f34a' }}>{s.year}</span>
       </div>
-      {/* hero: the lead contributor's avatar on a pixel field in the team's colors */}
-      <div className={`${a} relative overflow-hidden`} style={{ ...d(100), marginTop: u(3), height: u(52), background: '#0b0d12' }}>
-        <svg viewBox="0 0 30 18" preserveAspectRatio="xMidYMid slice" shapeRendering="crispEdges" className="absolute inset-0 h-full w-full" aria-hidden="true">
-          {Array.from({ length: 30 * 18 }, (_, i) => {
-            const x = i % 30
-            const y = Math.floor(i / 30)
-            const k = (x * 7 + y * 13 + x * y) % 11
-            return k < 3 ? <rect key={i} x={x} y={y} width="1" height="1" fill={STORY_LANES[(x + y) % STORY_LANES.length]} fillOpacity={0.25 + k * 0.2} /> : null
-          })}
-        </svg>
-        {lead && (
-          <div className="absolute inset-0 grid place-items-center">
-            <Identicon name={lead.name} size={160} style={{ width: u(38), height: u(38), boxShadow: '0 0 0 1.2cqw #0b0d12' }} />
+      {/* hero: the whole history as one contribution wall */}
+      {s.cal && (
+        <div className={`${a} relative`} style={{ ...d(100), marginTop: u(3), background: '#0b0d12', padding: `${u(WALL.pad)} ${u(WALL.pad)} ${u(3)}` }}>
+          <ContributionWall weeks={s.cal.weeks} />
+          <div className="font-mono" style={{ fontSize: u(3), lineHeight: 1.2, marginTop: u(2.4), color: 'rgba(255,255,255,0.7)' }}>
+            <span className="font-bold" style={{ color: GREENS[4] }}>{fmt(s.cal.activeDays)}</span> {s.cal.activeDays === 1 ? 'day' : 'days'} in the green
           </div>
-        )}
-      </div>
+        </div>
+      )}
       <div className="grid grid-cols-2" style={{ gap: u(5), marginTop: u(7) }}>
         <div className={a} style={d(250)}>
           <div className="font-medium opacity-70" style={{ fontSize: u(3.4) }}>Top contributors</div>
@@ -466,9 +538,8 @@ export const SLIDES = [
   { id: 'month', label: 'Best month', theme: { bg: '#b8f34a', fg: '#0e2a04' }, duration: 8000, render: BestMonth, when: (s) => s.cal?.month.commits >= 10 },
   { id: 'streak', label: 'Streak', theme: { bg: '#0b0d12', fg: '#ffffff' }, duration: 8000, render: Streak, when: (s) => s.cal?.streak.len >= 2 },
   { id: 'clock', label: 'When', theme: { bg: '#2a1a6e', fg: '#f1edff', hot: '#a3e635' }, backdrop: { variant: 'scatter', a: '#56d4e8', b: '#7b5cff', seed: 3 }, duration: 7000, render: Clock },
-  { id: 'busiest', label: 'Biggest day', theme: { bg: '#07080b', fg: '#ffffff' }, backdrop: { variant: 'diagonal', a: '#ff2d55', b: '#ff8ad8' }, duration: 5500, render: Busiest, when: (s) => s.busiest?.count >= 3 },
-  { id: 'authors', label: 'Contributors', theme: { bg: '#b4b0ff', fg: '#120d33' }, backdrop: { variant: 'stairs-bottom', a: '#6c63ff', b: '#ffd23f' }, duration: 8000, render: TopAuthors, when: (s) => s.top.length >= 2 },
-  { id: 'spotlight', label: '#1', theme: { bg: '#1fd18b', fg: '#04140c', ring: '#ffffff', hot: '#ffd23f' }, backdrop: { variant: 'scatter', a: '#0d8a5a', b: '#d6ff6b', seed: 5 }, duration: 7500, render: Spotlight, when: (s) => s.top.length >= 1 },
+  { id: 'busiest', label: 'Biggest day', theme: { bg: '#ffcc4d', fg: '#2b1600' }, duration: 6000, render: Busiest, when: (s) => s.busiest?.count >= 3 },
+  { id: 'authors', label: 'Contributors', theme: { bg: '#12452f', fg: '#eafff3', hot: '#ffd23f' }, duration: 7500, render: Contributors, when: (s) => s.top.length >= 1 },
   { id: 'files', label: 'Files', theme: { bg: '#f5d547', fg: '#1a1500', card: '#fff8dc' }, backdrop: { variant: 'checker', a: '#e3be1f', b: '#f5d547' }, duration: 8000, render: Files, when: (s) => s.hotspots.length >= 3 },
   { id: 'word', label: 'Word', theme: { bg: '#ff5a4e', fg: '#1a0402' }, backdrop: { variant: 'diagonal', a: '#8f1209', b: '#ffb199' }, duration: 5500, render: Word, when: (s) => s.topWord?.count >= 3 },
   { id: 'summary', label: 'Summary', theme: { bg: '#15171c', fg: '#ffffff' }, render: (props) => <Summary {...props} actions /> },

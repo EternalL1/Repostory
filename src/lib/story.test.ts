@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import { buildModel, type Model } from './git'
 import { SAMPLES } from './samples'
-import { calendar, calendarFrom, calendarLayout, dailyCounts, fileLabels, fromSnapshot, MONTHS, storyStats, toSnapshot } from './story'
+import { onlyAuthors } from './git'
+import { dayStats } from './team'
+import { BUSIEST_PEOPLE, calendar, calendarFrom, calendarLayout, dailyCounts, fileLabels, fromSnapshot, MONTHS, storyStats, toSnapshot, wallLayout } from './story'
 
 // ── the calendar exactly as it was computed before shares stored daily counts (characterization reference) ──
 const DAY_MS = 86_400_000
@@ -165,5 +167,59 @@ describe('fileLabels', () => {
     expect(fileLabels(['README.md', 'src/pages/TeamPage.jsx', 'repostory/README.md'])).toEqual(['README.md', 'TeamPage.jsx', 'repostory/README.md'])
     expect(fileLabels(['a/x/index.ts', 'b/x/index.ts', 'c/y.ts'])).toEqual(['a/x/index.ts', 'b/x/index.ts', 'y.ts'])
     expect(fileLabels([])).toEqual([])
+  })
+})
+
+describe('the biggest day', () => {
+  const model = () => {
+    const s = SAMPLES.find((x) => x.id === 'storefront')!
+    return buildModel(s.text(), s.name)
+  }
+
+  it('names who committed that day, most commits first, and its first and last commit times', () => {
+    const m = model()
+    const b = storyStats(m).busiest!
+    const iso = new Date(dayStats(m).busiest!.day).toISOString().slice(0, 10)
+    const that = m.order.filter((c) => c.date.startsWith(iso))
+    expect(that).toHaveLength(b.count)
+    expect(b.people!.reduce((n, p) => n + p.commits, 0)).toBe(b.count)
+    expect(b.crew).toBe(new Set(that.map((c) => c.author)).size)
+    expect(b.people!.map((p) => p.commits)).toEqual([...b.people!.map((p) => p.commits)].sort((x, y) => y - x))
+    const times = that.map((c) => c.date.slice(11, 16)).sort()
+    expect([b.first, b.last]).toEqual([times[0], times.at(-1)])
+  })
+
+  it('has one person on it in a Story about one person', () => {
+    const b = storyStats(onlyAuthors(model(), new Set(['Priya Nair']))).busiest!
+    expect(b.crew).toBe(1)
+    expect(b.people).toEqual([{ name: 'Priya Nair', commits: b.count }])
+  })
+
+  it(`names at most ${BUSIEST_PEOPLE} people and still counts everyone`, () => {
+    for (const s of SAMPLES) {
+      const b = storyStats(buildModel(s.text(), s.name)).busiest
+      if (b) expect(b.people!.length).toBe(Math.min(b.crew!, BUSIEST_PEOPLE))
+    }
+  })
+})
+
+describe('wallLayout', () => {
+  const aspect = 2
+  it('keeps up to a year or so as one strip of weeks', () => {
+    expect(wallLayout(27, aspect)).toEqual({ bands: 1, cols: 27, rows: 7 })
+    expect(wallLayout(1, aspect)).toEqual({ bands: 1, cols: 1, rows: 7 })
+  })
+
+  it('folds a long history into bands that fill the box, every week placed once', () => {
+    for (const weeks of [60, 160, 520, 1500]) {
+      const { bands, cols, rows } = wallLayout(weeks, aspect)
+      expect(bands).toBeGreaterThan(1)
+      expect(bands * cols).toBeGreaterThanOrEqual(weeks)
+      expect((bands - 1) * cols).toBeLessThan(weeks) // no empty band
+      expect(rows).toBe(bands * 8 - 1)
+      // the wall's shape stays near the box's: neither a thin strip nor a tall column
+      expect(cols / rows).toBeGreaterThan(aspect / 2.5)
+      expect(cols / rows).toBeLessThan(aspect * 2.5)
+    }
   })
 })
