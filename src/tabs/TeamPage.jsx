@@ -2,9 +2,9 @@ import { useMemo, useState } from 'react'
 import { DAYS, formatDate } from '../lib/git'
 import { COL, LANE_COLORS, tint } from '../lib/theme'
 import { dayName, dayStats, teamStats } from '../lib/team'
+import { clock12 } from '../lib/story'
 import { PixelBolt, PixelCalendar, PixelFire } from '../components/pixel'
 
-const pad2 = (n) => String(n).padStart(2, '0')
 
 function DayFigure({ value, label, icon = null }) {
   return (
@@ -80,7 +80,7 @@ export default function TeamPage({ model }) {
         <p className="m-0 mt-3 text-base leading-relaxed text-soft">
           {team.busiest && (
             <>
-              The busiest hour is <Em>{DAYS[team.busiest.day]} {pad2(team.busiest.hour)}:00</Em>.{' '}
+              The busiest hour is <Em>{DAYS[team.busiest.day]} {clock12(team.busiest.hour)}</Em>.{' '}
             </>
           )}
           <Em>{team.lateNight}</Em> of {total} commits landed between 10 PM and 5 AM.{' '}
@@ -148,7 +148,7 @@ export default function TeamPage({ model }) {
               ...heat.grid[d].map((v, h) => (
                 <div
                   key={`${day}${h}`}
-                  title={`${day} ${pad2(h)}:00 · ${v} commit${v === 1 ? '' : 's'}`}
+                  title={`${day} ${clock12(h)} · ${v} commit${v === 1 ? '' : 's'}`}
                   className="aspect-square rounded-[3px] transition-[background-color] duration-200"
                   style={{ background: v ? tint(heatColor, Math.round(35 + (65 * v) / heat.max)) : COL.panel2 }}
                 />

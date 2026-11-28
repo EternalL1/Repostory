@@ -2,7 +2,7 @@
 // phone, in the desktop player and in the small poster on the Story tab.
 import { useContext, useEffect, useRef, useState } from 'react'
 import { PixelFire, PixelLogo } from '../pixel'
-import { fileLabels, fmt, isSolo, persona, shortDay, summaryLabels, wallLayout } from '../../lib/story'
+import { clock12, clock12Of, fileLabels, fmt, isSolo, persona, shortDay, summaryLabels, wallLayout } from '../../lib/story'
 import { Identicon } from './art'
 import CalendarGrid, { GREENS } from './CalendarGrid'
 import { StoryHold, StoryPaused } from './context'
@@ -174,7 +174,7 @@ function Busiest({ s }) {
       <div className="absolute inset-x-0 bottom-0 text-center" style={{ padding: `0 ${u(9)} ${u(16)}` }}>
         <Headline delay={1000}>{who} biggest day</Headline>
         <Sub delay={1150}>
-          {b.first && b.last && b.first !== b.last ? `${b.count} commits, ${b.first} to ${b.last}. ` : ''}Where did you find the time?
+          {b.first && b.last && b.first !== b.last ? `${b.count} commits, ${clock12Of(b.first)} to ${clock12Of(b.last)}. ` : ''}Where did you find the time?
         </Sub>
       </div>
     </div>
@@ -253,8 +253,17 @@ function streakRange(from, to, withYear) {
 }
 
 /** The longest run glowing on the dimmed calendar: two colors only (dark card, green), the flame as the one warm accent. */
+/** The calendar cut down to the streak's weeks and one week either side: a short streak becomes a month page. */
+function zoomToStreak(cal, from, to) {
+  const at = (t) => cal.weeks.findIndex((w) => w.some((c) => c.t === t))
+  const a = Math.max(0, at(from) - 1)
+  const b = Math.min(cal.weeks.length, at(to) + 2)
+  return { ...cal, weeks: cal.weeks.slice(a, b), spanDays: (b - a) * 7 }
+}
+
 function Streak({ s, theme }) {
   const { len, from, to } = s.cal.streak
+  const zoom = zoomToStreak(s.cal, from, to)
   const n = useCountUp(len, 900)
   return (
     <div className="relative flex h-full flex-col justify-center" style={{ padding: `0 ${u(9)}` }}>
@@ -267,7 +276,7 @@ function Streak({ s, theme }) {
         {streakRange(from, to, s.cal.spanDays > 366)}. {isSolo(s) ? 'The longest you kept the squares green.' : 'The longest the squares stayed green.'}
       </Sub>
       <div style={{ marginTop: u(9) }}>
-        <CalendarGrid cal={s.cal} delay={700} highlight={{ from, to }} bg={theme.bg} />
+        <CalendarGrid cal={zoom} delay={700} highlight={{ from, to }} bg={theme.bg} />
       </div>
     </div>
   )
@@ -358,7 +367,8 @@ function When({ s }) {
     <div className="absolute inset-0 overflow-hidden" style={{ background: `linear-gradient(${sky}, ${skyAt((t + 2) % 24)})`, color: ink }}>
       <div className="absolute inset-x-0 text-center" style={{ top: u(17), padding: `0 ${u(8)}` }}>
         <div className="font-mono font-extrabold tabular-nums" style={{ fontSize: u(15), lineHeight: 1, letterSpacing: '-0.03em' }}>
-          {hh(hour)}:{landed ? '00' : hh(Math.floor((t % 1) * 60))}
+          {hour % 12 || 12}:{landed ? '00' : hh(Math.floor((t % 1) * 60))}
+          <span style={{ fontSize: '0.4em', marginLeft: '0.2em', letterSpacing: 0 }}>{hour < 12 ? 'AM' : 'PM'}</span>
         </div>
         <div className="story-reveal" data-on={landed || undefined} style={{ marginTop: u(2) }}>
           <h2 className="m-0 font-extrabold text-balance" style={{ fontSize: u(5.6), lineHeight: 1.15 }}>
@@ -369,7 +379,7 @@ function When({ s }) {
             </span>
           </h2>
           <p className="m-0 font-medium text-balance" style={{ fontSize: u(3.6), lineHeight: 1.35, marginTop: u(1.5), opacity: 0.85 }}>
-            {atPeak ? `Most commits landed on ${s.peakWeekday} around ${s.peakHourLabel}. ${s.persona.line}` : `${fmt(s.hours[hour])} ${s.hours[hour] === 1 ? 'commit' : 'commits'} at ${hh(hour)}:00.`}
+            {atPeak ? `Most commits landed on ${s.peakWeekday} around ${clock12(s.peakHour)}. ${s.persona.line}` : `${fmt(s.hours[hour])} ${s.hours[hour] === 1 ? 'commit' : 'commits'} at ${clock12(hour)}.`}
           </p>
         </div>
       </div>
@@ -385,7 +395,7 @@ function When({ s }) {
       <div
         ref={bars}
         role="img"
-        aria-label={`Commits by hour of the day, most at ${s.peakHourLabel}`}
+        aria-label={`Commits by hour of the day, most at ${clock12(s.peakHour)}`}
         className="absolute flex items-end"
         style={{ left: u(7), right: u(7), bottom: u(14), height: u(18), gap: u(0.5), touchAction: 'none', cursor: landed ? 'ew-resize' : 'default' }}
         onPointerDown={onPointerDown}
@@ -419,7 +429,7 @@ function CoderCard({ s }) {
   const m = MASCOTS[s.persona.name]
   const max = Math.max(1, ...s.hours)
   const stats = [
-    ['Peak hour', s.peakHourLabel],
+    ['Peak hour', clock12(s.peakHour)],
     ['Best day', s.peakWeekday.replace(/s$/, '')],
     ['Late nights', fmt(s.lateNight)],
     ['Weekends', `${pct(s.weekendShare)}%`],

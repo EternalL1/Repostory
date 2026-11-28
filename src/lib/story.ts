@@ -184,6 +184,15 @@ export function fileLabels(paths: string[]): string[] {
 
 export const fmt = (n: number) => n.toLocaleString('en-US')
 
+/** The 12-hour clock: "10 AM", "12 PM" (noon), "12 AM" (midnight), or with minutes "9:05 AM". */
+export function clock12(hour: number, minute?: number): string {
+  const h = hour % 12 || 12
+  const half = hour < 12 ? 'AM' : 'PM'
+  return minute === undefined ? `${h} ${half}` : `${h}:${String(minute).padStart(2, '0')} ${half}`
+}
+/** clock12 for a stored "HH:MM" (each author's own clock). */
+export const clock12Of = (hhmm: string) => clock12(+hhmm.slice(0, 2), +hhmm.slice(3, 5))
+
 /** A Story about one person (the repo has one author, or everyone else was left out) speaks to them: "You shipped". */
 export const isSolo = (s: Pick<StoryStats, 'authors'>) => s.authors === 1
 
