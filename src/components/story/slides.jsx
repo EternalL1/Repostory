@@ -1,12 +1,12 @@
 // The Story's slides. Sizes are in cqw (percent of the card's width), so a slide reads the same full-screen on a
 // phone, in the desktop player and in the small poster on the Story tab.
 import { useContext, useEffect, useRef, useState } from 'react'
-import { PixelFire, PixelLogo } from '../pixel'
-import { clock12, clock12Of, fileLabels, fmt, isSolo, persona, shortDay, summaryLabels } from '../../lib/story'
+import { PixelLogo } from '../pixel'
+import { clock12, clock12Of, fileLabels, fmt, isSolo, MONTHS, persona, summaryLabels } from '../../lib/story'
 import { Identicon } from './art'
 import CalendarGrid, { GREENS } from './CalendarGrid'
 import { StoryHold, StoryPaused } from './context'
-import { Mascot, MASCOTS, PixelPage, PixelSky, PixelTrophy } from './pixelArt'
+import { Mascot, MASCOTS, PixelFlame, PixelPage, PixelSky, PixelTrophy } from './pixelArt'
 
 export const u = (n) => `${n}cqw`
 const d = (ms) => ({ '--d': `${ms}ms` })
@@ -244,40 +244,64 @@ function BestMonth({ s }) {
   )
 }
 
-// "Tue, Jul 31 to Sun, Aug 26", with the year once the history spans years (on both ends if it crosses New Year)
-function streakRange(from, to, withYear) {
-  if (!withYear) return `${shortDay(from)} to ${shortDay(to)}`
-  const y0 = new Date(from).getUTCFullYear()
-  const y1 = new Date(to).getUTCFullYear()
-  return y0 === y1 ? `${shortDay(from)} to ${shortDay(to)}, ${y1}` : `${shortDay(from)}, ${y0} to ${shortDay(to)}, ${y1}`
+// "Apr 13 to Apr 18": the streak's dates without weekdays, with the year once the history spans years (on both
+// ends if the streak crosses New Year)
+function streakDates(from, to, withYear) {
+  const md = (t) => `${MONTHS[new Date(t).getUTCMonth()]} ${new Date(t).getUTCDate()}`
+  if (!withYear) return `${md(from)} to ${md(to)}`
+  const [y0, y1] = [new Date(from).getUTCFullYear(), new Date(to).getUTCFullYear()]
+  return y0 === y1 ? `${md(from)} to ${md(to)}, ${y1}` : `${md(from)}, ${y0} to ${md(to)}, ${y1}`
 }
+// stars over the campfire: fixed spots, so they sit still
+const STARS = Array.from({ length: 22 }, (_, i) => [(i * 37) % 97, 8 + ((i * 53) % 60), i % 3 === 0])
 
-/** The longest run glowing on the dimmed calendar: two colors only (dark card, green), the flame as the one warm accent. */
-/** The calendar cut down to the streak's weeks and one week either side: a short streak becomes a month page. */
-function zoomToStreak(cal, from, to) {
-  const at = (t) => cal.weeks.findIndex((w) => w.some((c) => c.t === t))
-  const a = Math.max(0, at(from) - 1)
-  const b = Math.min(cal.weeks.length, at(to) + 2)
-  return { ...cal, weeks: cal.weeks.slice(a, b), spanDays: (b - a) * 7 }
-}
-
-function Streak({ s, theme }) {
+/**
+ * The longest streak as a campfire at night: one log drops onto the pile per day (nine at most), then the fire flares
+ * up, as big as the streak (it grows slower as the streak gets long), and keeps flickering.
+ */
+function Streak({ s }) {
   const { len, from, to } = s.cal.streak
-  const zoom = zoomToStreak(s.cal, from, to)
-  const n = useCountUp(len, 900)
+  const logs = Math.min(len, 9)
+  const flare = 200 + logs * 110
+  const size = 30 + Math.min(1, Math.log2(len) / 6) * 34
   return (
-    <div className="relative flex h-full flex-col justify-center" style={{ padding: `0 ${u(9)}` }}>
-      <div className="story-pop flex items-center" style={{ ...d(150), gap: u(3) }}>
-        <PixelFire size={56} />
-        <span className="font-extrabold tabular-nums" style={{ fontSize: u(26), lineHeight: 0.95, letterSpacing: '-0.045em', color: GREENS[4] }}>{n}</span>
+    <div className="absolute inset-0 overflow-hidden" style={{ background: 'linear-gradient(#0a0c26, #241a4a 70%, #2c1d33)' }}>
+      {STARS.map(([x, y, big], i) => (
+        <span key={i} className="absolute" style={{ left: `${x}%`, top: u(y + 50), width: u(big ? 0.9 : 0.6), height: u(big ? 0.9 : 0.6), background: '#fff', opacity: big ? 0.8 : 0.5 }} />
+      ))}
+      <div className="absolute inset-x-0 text-center" style={{ top: u(17), padding: `0 ${u(8)}` }}>
+        <div className="story-pop font-extrabold tabular-nums" style={{ ...d(flare + 400), fontSize: u(30), lineHeight: 0.9, color: '#ffd23f', textShadow: `0 0 ${u(6)} rgba(255,138,31,0.6)` }}>{len}</div>
+        <Headline delay={flare + 550} size={7.6}>days by the fire</Headline>
+        <p className="story-rise m-0 font-medium text-balance" style={{ ...d(flare + 700), fontSize: u(4.2), lineHeight: 1.35, marginTop: u(2), opacity: 0.85 }}>
+          {isSolo(s) ? 'You' : 'The team'} kept it going, {streakDates(from, to, s.cal.spanDays > 366)}.
+        </p>
       </div>
-      <Headline delay={300}>days, no days off</Headline>
-      <Sub delay={500}>
-        {streakRange(from, to, s.cal.spanDays > 366)}. {isSolo(s) ? 'The longest you kept the squares green.' : 'The longest the squares stayed green.'}
-      </Sub>
-      <div style={{ marginTop: u(9) }}>
-        <CalendarGrid cal={zoom} delay={700} highlight={{ from, to }} bg={theme.bg} />
+      {/* the glow on the ground, the fire, the pile */}
+      <div className="absolute rounded-[50%]" style={{ left: '50%', bottom: u(30), width: u(size * 2.4), height: u(size * 0.7), marginLeft: u(-size * 1.2), background: 'radial-gradient(closest-side, rgba(255,138,31,0.45), transparent)' }} />
+      <div className="story-flame absolute" style={{ ...d(flare), left: '50%', bottom: u(37), width: u(size), marginLeft: u(-size / 2) }}>
+        <PixelFlame delay={flare + 700} />
       </div>
+      <div className="absolute" style={{ left: '50%', bottom: u(30), width: u(56), marginLeft: u(-28), height: u(14) }}>
+        {Array.from({ length: logs }, (_, i) => {
+          const row = i < 4 ? 0 : i < 7 ? 1 : 2
+          const count = [4, 3, 2][row]
+          const inRow = i - [0, 4, 7][row]
+          const r = (i % 2 ? 1 : -1) * (4 + (i % 3) * 3)
+          return (
+            <span
+              key={i}
+              className="story-log absolute"
+              style={{ ...d(200 + i * 110), '--r': `${r}deg`, left: u(28 - (count * 12) / 2 + inRow * 12), bottom: u(row * 4), width: u(13), height: u(3.6), background: 'linear-gradient(#a0602a, #6b3a14)', borderRadius: u(1), boxShadow: `inset ${u(-1)} 0 0 #4a2610`, transform: `rotate(${r}deg)` }}
+            />
+          )
+        })}
+      </div>
+      {len > logs && (
+        <div className="story-rise absolute inset-x-0 text-center font-mono font-bold" style={{ ...d(flare), bottom: u(24), fontSize: u(3.2), color: '#ffb36b' }}>× {fmt(len)} logs</div>
+      )}
+      {Array.from({ length: 6 }, (_, i) => (
+        <span key={i} className="story-spark absolute" style={{ ...d(flare + 300 + i * 160), left: `${44 + ((i * 7) % 14)}%`, bottom: u(37 + size * 0.8), width: u(0.9), height: u(0.9), background: '#ffd23f' }} />
+      ))}
     </div>
   )
 }
@@ -695,7 +719,7 @@ export const SLIDES = [
   { id: 'commits', label: 'Commits', theme: { bg: '#ff4fa3', fg: '#16030c' }, backdrop: { variant: 'stairs', a: '#7a0a3d', b: '#ffd23f' }, duration: 5500, render: Commits },
   { id: 'calendar', label: 'Calendar', theme: { bg: '#07120d', fg: '#eafff3' }, duration: 8500, render: Calendar, when: (s) => s.cal?.activeDays >= 1 },
   { id: 'month', label: 'Best month', theme: { bg: '#b8f34a', fg: '#0e2a04' }, duration: 8000, render: BestMonth, when: (s) => s.cal?.month.commits >= 10 },
-  { id: 'streak', label: 'Streak', theme: { bg: '#0b0d12', fg: '#ffffff' }, duration: 8000, render: Streak, when: (s) => s.cal?.streak.len >= 2 },
+  { id: 'streak', label: 'Streak', theme: { bg: '#0a0c26', fg: '#fff4e6' }, duration: 8000, render: Streak, when: (s) => s.cal?.streak.len >= 2 },
   // the sky it lands on picks the player's chrome: dark on a daytime sky, light at night
   { id: 'clock', label: 'When', theme: (s) => ({ bg: skyAt(s.peakHour), fg: inkOn(skyAt(s.peakHour)) }), duration: 7500, render: When, when: (s) => s.hours.some((n) => n > 0) },
   { id: 'card', label: 'Coder card', theme: { bg: '#0b0a1a', fg: '#ffffff' }, duration: 7500, render: CoderCard, when: (s) => s.hours.some((n) => n > 0) },
