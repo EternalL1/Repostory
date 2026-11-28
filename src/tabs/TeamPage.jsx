@@ -94,22 +94,42 @@ export default function TeamPage({ model }) {
       </header>
 
       <div className="grid grid-cols-1 gap-x-12 gap-y-10 lg:grid-cols-2">
-        <Section title="Commits by author">
-          <ul className="m-0 flex list-none flex-col gap-3.5 p-0">
-            {team.authors.map((a) => (
-              <li key={a.name} className="grid grid-cols-[minmax(0,180px)_minmax(0,1fr)_32px] items-center gap-4">
-                <div className="min-w-0">
-                  <div className="truncate text-sm font-medium">{a.name}</div>
-                  <div className="truncate text-xs text-muted">
-                    {a.fileChanges} file changes · {a.merges} {a.merges === 1 ? 'merge' : 'merges'}
+        <Section title="Commits by author" note={team.authors.length > 1 ? 'Pick someone to see when they commit.' : undefined}>
+          <ul className="-mx-2 m-0 flex list-none flex-col gap-1 p-0">
+            {team.authors.map((a) => {
+              const row = (
+                <>
+                  <div className="min-w-0">
+                    <div className="truncate text-sm font-medium">{a.name}</div>
+                    <div className="truncate text-xs text-muted">
+                      {a.fileChanges} file changes · {a.merges} {a.merges === 1 ? 'merge' : 'merges'}
+                    </div>
                   </div>
-                </div>
-                <div className="h-1.5 rounded-full bg-panel-2">
-                  <div className="h-1.5 rounded-full" style={{ width: `${(a.commits / maxCommits) * 100}%`, background: colorOf(a.name) }} />
-                </div>
-                <div className="text-right text-sm font-medium tabular-nums">{a.commits}</div>
-              </li>
-            ))}
+                  <div className="h-1.5 rounded-full bg-panel-2">
+                    <div className="h-1.5 rounded-full" style={{ width: `${(a.commits / maxCommits) * 100}%`, background: colorOf(a.name) }} />
+                  </div>
+                  <div className="text-right text-sm font-medium tabular-nums">{a.commits}</div>
+                </>
+              )
+              const grid = 'grid w-full grid-cols-[minmax(0,180px)_minmax(0,1fr)_32px] items-center gap-4 rounded-md px-2 py-1.5'
+              // with collaborators, a name picks that person for "When commits happen" (again: back to everyone)
+              if (team.authors.length < 2) return <li key={a.name} className={grid}>{row}</li>
+              const on = a.name === who
+              return (
+                <li key={a.name}>
+                  <button
+                    type="button"
+                    aria-pressed={on}
+                    onClick={() => setWho(on ? '' : a.name)}
+                    className={`press ${grid} cursor-pointer text-left transition-opacity duration-150 ${
+                      on ? 'bg-fg/[0.08]' : `hover:bg-fg/[0.04] ${who ? 'opacity-55 hover:opacity-100' : ''}`
+                    }`}
+                  >
+                    {row}
+                  </button>
+                </li>
+              )
+            })}
           </ul>
         </Section>
 
@@ -141,7 +161,7 @@ export default function TeamPage({ model }) {
           <div className="grid grid-cols-[32px_repeat(24,minmax(0,1fr))] gap-[3px] text-xs text-muted">
             <span />
             {Array.from({ length: 24 }, (_, h) => (
-              <span key={`h${h}`} className="text-center">{h % 6 === 0 ? h : ''}</span>
+              <span key={`h${h}`} className="whitespace-nowrap text-center">{h % 6 === 0 ? ['12a', '6a', '12p', '6p'][h / 6] : ''}</span>
             ))}
             {DAYS.map((day, d) => [
               <span key={day} className="leading-[16px]">{day}</span>,
