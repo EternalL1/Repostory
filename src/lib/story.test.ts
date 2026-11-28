@@ -3,7 +3,7 @@ import { buildModel, type Model } from './git'
 import { SAMPLES } from './samples'
 import { onlyAuthors } from './git'
 import { dayStats } from './team'
-import { BUSIEST_PEOPLE, calendar, clock12, clock12Of, calendarFrom, calendarLayout, dailyCounts, fileLabels, fromSnapshot, MONTHS, isSolo, storyStats, summaryLabels, toSnapshot } from './story'
+import { BUSIEST_PEOPLE, calendar, clock12, clock12Of, calendarFrom, calendarLayout, dailyCounts, fileLabels, fromSnapshot, MONTHS, isSolo, namesInShare, storyStats, summaryLabels, toSnapshot } from './story'
 
 // ── the calendar exactly as it was computed before shares stored daily counts (characterization reference) ──
 const DAY_MS = 86_400_000
@@ -199,6 +199,18 @@ describe('the biggest day', () => {
     for (const s of SAMPLES) {
       const b = storyStats(buildModel(s.text(), s.name)).busiest
       if (b) expect(b.people!.length).toBe(Math.min(b.crew!, BUSIEST_PEOPLE))
+    }
+  })
+})
+
+describe('namesInShare', () => {
+  it('lists every name the share link stores, each once', () => {
+    for (const sample of SAMPLES) {
+      const snap = toSnapshot(storyStats(buildModel(sample.text(), sample.name)))
+      const stored = [...snap.top.map((t) => t.name), ...(snap.busiest?.people ?? []).map((p) => p.name)]
+      const listed = namesInShare(snap)
+      expect(new Set(listed)).toEqual(new Set(stored))
+      expect(listed).toHaveLength(new Set(listed).size)
     }
   })
 })

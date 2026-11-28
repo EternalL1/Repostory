@@ -202,6 +202,9 @@ export const summaryLabels = (s: Pick<StoryStats, 'authors'>) => ({ people: isSo
 /** People named on the biggest day, most commits first; `crew` counts everyone. */
 export const BUSIEST_PEOPLE = 6
 
+/** Every person's name a share link stores (top contributors, then anyone else from the biggest day), for the share step to list. */
+export const namesInShare = (s: Pick<StoryStats, 'top' | 'busiest'>) => [...new Set([...s.top.map((t) => t.name), ...(s.busiest?.people ?? []).map((p) => p.name)])]
+
 /**
  * The biggest day: its date and count, and (since shares can be older than these) who committed that day and how
  * much, and its first and last commit times on each author's own clock.

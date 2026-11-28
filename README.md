@@ -62,9 +62,10 @@ Histories of any size work: 50,000 commits load in about 0.3 s. For 100,000+ com
 - A GitHub link is read by Repostory's server with its own token. Author emails are used there only to apply
   `.mailmap` and are never sent to the browser.
 - A Story is stored only when someone presses **Share link**, and the share step lists exactly what goes up: the
-  repository name, up to 5 contributor names, up to 5 file paths, the most common first word of commit messages, the
-  busiest branch flow, and counts and dates. Never the log, commit messages or the rest of the files. Leaving people out
-  under **People in this Story** keeps their names out of the poster and the link.
+  repository name, the names of up to 5 top contributors and of up to 6 people from the biggest day, up to 5 file paths,
+  the most common first word of commit messages, the busiest branch flow, and counts, dates and times (such as the
+  biggest day's first and last commit). Never the log, author emails, commit messages or the rest of the files. Leaving
+  people out under **People in this Story** keeps their names out of the poster and the link.
 - Share links expire after a year. Whoever made one can delete it from its page in the same browser.
 - Visits are counted with Vercel Web Analytics: page views, referrers and rough location, without cookies. Nothing
   from a loaded repository is sent to it.
