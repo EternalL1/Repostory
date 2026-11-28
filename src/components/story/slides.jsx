@@ -466,7 +466,8 @@ function CoderCard({ s }) {
         </div>
       </div>
       <p className="story-rise m-0 text-center font-medium text-balance" style={{ ...d(2100), fontSize: u(4), lineHeight: 1.35, color: '#fff' }}>
-        {isSolo(s) ? 'You’re a' : 'This team is a'} <b style={{ color: m.accent }}>{s.persona.name}</b>: most commits on {s.peakWeekday} around {s.peakHourLabel}.
+        {/* When just said the type and the hour; this line gives a reason to share the card instead */}
+        One of {Object.keys(MASCOTS).length} coder types. {isSolo(s) ? 'Which one are your friends?' : 'How do other teams compare?'}
       </p>
     </div>
   )
