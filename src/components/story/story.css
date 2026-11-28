@@ -65,9 +65,11 @@
 @keyframes story-rays {
   from { opacity: 0; transform: rotate(-20deg) scale(0.9); }
 }
+/* the end value is reached at 85% and held: a stepped animation whose clock stops a hair before its end otherwise
+   freezes one step short, with the end of the line cut off */
 @keyframes story-banner {
   from { clip-path: inset(0 100% 0 0); }
-  to { clip-path: inset(0 0 0 0); }
+  85%, to { clip-path: inset(0 0 0 0); }
 }
 @keyframes story-block {
   from { opacity: 0.4; transform: scaleY(0.1); }
