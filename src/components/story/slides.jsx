@@ -283,7 +283,15 @@ export function skyAt(t) {
   const [a, b] = [rgb(c0), rgb(c1)]
   return `#${a.map((v, j) => Math.round(v + (b[j] - v) * k).toString(16).padStart(2, '0')).join('')}`
 }
-const daylight = (t) => t >= 7 && t < 17.5
+// near-black or white text, whichever reads better on this sky (WCAG relative luminance; 0.186 is where the two
+// inks tie). Every hour a peak can land on then reads at 5:1 or better; only passing moments of the time-lapse dip.
+const luminance = (hex) => {
+  const [r, g, b] = rgb(hex).map((v) => (v /= 255) <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4)
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b
+}
+const DARK_INK = '#050a14'
+const inkOn = (hex) => (luminance(hex) > 0.186 ? DARK_INK : '#ffffff')
+const lightSky = (hex) => inkOn(hex) === DARK_INK
 const hh = (h) => String(h).padStart(2, '0')
 const reducedMotion = () => typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
 
@@ -292,9 +300,10 @@ function useTimeLapse(to, ms = 1700, delay = 600) {
   const paused = useContext(StoryPaused)
   const pausedRef = useRef(paused)
   pausedRef.current = paused
-  const [state, setState] = useState(() => (reducedMotion() ? { t: to, landed: true } : { t: 0, landed: false }))
+  const [state, setState] = useState({ t: 0, landed: false })
   useEffect(() => {
-    if (reducedMotion()) return
+    // reduced motion lands at once; decided here, not during render, so the first render matches the server's
+    if (reducedMotion()) return setState({ t: to, landed: true })
     let raf = 0
     let elapsed = -delay
     let prev = performance.now()
@@ -323,7 +332,8 @@ function When({ s }) {
   const hour = Math.min(23, Math.floor(t))
   const awake = persona(hour).name
   const accent = MASCOTS[s.persona.name].accent
-  const ink = daylight(t) ? '#0b1a33' : '#f1edff'
+  const sky = skyAt(t)
+  const ink = inkOn(sky)
   const max = Math.max(1, ...s.hours)
   const atPeak = Math.round(t) === s.peakHour
 
@@ -345,14 +355,18 @@ function When({ s }) {
   }
 
   return (
-    <div className="absolute inset-0 overflow-hidden" style={{ background: `linear-gradient(${skyAt(t)}, ${skyAt((t + 2) % 24)})`, color: ink }}>
+    <div className="absolute inset-0 overflow-hidden" style={{ background: `linear-gradient(${sky}, ${skyAt((t + 2) % 24)})`, color: ink }}>
       <div className="absolute inset-x-0 text-center" style={{ top: u(17), padding: `0 ${u(8)}` }}>
         <div className="font-mono font-extrabold tabular-nums" style={{ fontSize: u(15), lineHeight: 1, letterSpacing: '-0.03em' }}>
           {hh(hour)}:{landed ? '00' : hh(Math.floor((t % 1) * 60))}
         </div>
         <div className="story-reveal" data-on={landed || undefined} style={{ marginTop: u(2) }}>
           <h2 className="m-0 font-extrabold text-balance" style={{ fontSize: u(5.6), lineHeight: 1.15 }}>
-            {isSolo(s) ? 'You’re a' : 'This team is a'} <span style={{ color: accent }}>{s.persona.name}</span>
+            {isSolo(s) ? 'You’re a' : 'This team is a'}{' '}
+            {/* a sticker in the type's color: its own dark text reads on any sky (the color alone did not by day) */}
+            <span className="whitespace-nowrap" style={{ background: accent, color: '#1a1028', padding: `0 ${u(1.6)}`, borderRadius: u(1.2) }}>
+              {s.persona.name}
+            </span>
           </h2>
           <p className="m-0 font-medium text-balance" style={{ fontSize: u(3.6), lineHeight: 1.35, marginTop: u(1.5), opacity: 0.85 }}>
             {atPeak ? `Most commits landed on ${s.peakWeekday} around ${s.peakHourLabel}. ${s.persona.line}` : `${fmt(s.hours[hour])} ${s.hours[hour] === 1 ? 'commit' : 'commits'} at ${hh(hour)}:00.`}
@@ -367,7 +381,7 @@ function When({ s }) {
       <div className="absolute inset-x-0 flex justify-center" style={{ bottom: u(42) }}>
         <Mascot key={awake} name={awake} size={u(30)} className="story-swap" />
       </div>
-      <div className="absolute inset-x-0" style={{ bottom: u(36), height: u(6), background: daylight(t) ? 'rgba(11,26,51,0.25)' : 'rgba(0,0,0,0.35)' }} />
+      <div className="absolute inset-x-0" style={{ bottom: u(36), height: u(6), background: lightSky(sky) ? 'rgba(11,26,51,0.25)' : 'rgba(0,0,0,0.35)' }} />
       <div
         ref={bars}
         role="img"
@@ -671,8 +685,8 @@ export const SLIDES = [
   { id: 'month', label: 'Best month', theme: { bg: '#b8f34a', fg: '#0e2a04' }, duration: 8000, render: BestMonth, when: (s) => s.cal?.month.commits >= 10 },
   { id: 'streak', label: 'Streak', theme: { bg: '#0b0d12', fg: '#ffffff' }, duration: 8000, render: Streak, when: (s) => s.cal?.streak.len >= 2 },
   // the sky it lands on picks the player's chrome: dark on a daytime sky, light at night
-  { id: 'clock', label: 'When', theme: (s) => ({ bg: skyAt(s.peakHour), fg: daylight(s.peakHour) ? '#0b1a33' : '#f1edff' }), duration: 7500, render: When },
-  { id: 'card', label: 'Coder card', theme: { bg: '#0b0a1a', fg: '#ffffff' }, duration: 7500, render: CoderCard },
+  { id: 'clock', label: 'When', theme: (s) => ({ bg: skyAt(s.peakHour), fg: inkOn(skyAt(s.peakHour)) }), duration: 7500, render: When, when: (s) => s.hours.some((n) => n > 0) },
+  { id: 'card', label: 'Coder card', theme: { bg: '#0b0a1a', fg: '#ffffff' }, duration: 7500, render: CoderCard, when: (s) => s.hours.some((n) => n > 0) },
   { id: 'busiest', label: 'Biggest day', theme: { bg: '#ffcc4d', fg: '#2b1600' }, duration: 6000, render: Busiest, when: (s) => s.busiest?.count >= 3 },
   { id: 'authors', label: 'Contributors', theme: { bg: '#12452f', fg: '#eafff3', hot: '#ffd23f' }, duration: 7500, render: Contributors, when: (s) => s.top.length >= 1 },
   { id: 'files', label: 'Files', theme: { bg: '#f5d547', fg: '#1a1500', card: '#fff8dc' }, backdrop: { variant: 'checker', a: '#e3be1f', b: '#f5d547' }, duration: 8000, render: Files, when: (s) => s.hotspots.length >= 3 },
