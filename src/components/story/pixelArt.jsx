@@ -146,3 +146,22 @@ export const PixelSky = ({ moon, size }) => (
     {(moon ? MOON : SUN).flatMap((row, y) => [...row].map((ch, x) => (SKY_COLORS[ch] ? <rect key={`${x}-${y}`} x={x} y={y} width="1" height="1" fill={SKY_COLORS[ch]} /> : null)))}
   </svg>
 )
+
+// The campfire's flame in three frames (R red, O orange, Y yellow, W hot core): the tips lean left, up and right and
+// the core shifts with them. Played in a loop like a GIF by the story-frame class.
+const FLAME = ['......R.......', '.....RR....R..', '....RRR...RR..', '...RRORR.RRR..', '...ROORRRROR..', '..RROYORRROR..', '..ROYYOORROOR.', '.RROYWYOOROYR.', '.ROYWWYYOOYYOR', 'RROYWWWYYOYWOR', 'ROYYWWWWYYWWYR', 'ROYWWWWWWWWYOR', '.ROYWWWWWWYOR.', '..ROYYYYYYOR..']
+const FLAME_FRAMES = [
+  FLAME,
+  ['.......R......', '......RR...R..', '.....RRR..RR..', '....RROR.RRRR.', '...RROORRROOR.', ...FLAME.slice(5, 7), '.RROYYWOOROYR.', '.ROYYWWYOOYYOR', 'RROYYWWWYOYWOR', ...FLAME.slice(10)],
+  ['.....R........', '....RR........', '....RRR....R..', '...RROR...RR..', '...ROORR.RROR.', ...FLAME.slice(5, 7), '.RROWYYOOROYR.', '.ROWWYYYOOYYOR', 'RROWWWYYYOYWOR', ...FLAME.slice(10)],
+]
+const FLAME_COLORS = { R: '#e5482a', O: '#ff8a1f', Y: '#ffd23f', W: '#fff4b8' }
+
+/** A flickering pixel flame, as wide as its box. The loop starts `delay` ms in; before that only frame 1 shows. */
+export function PixelFlame({ delay = 0 }) {
+  return FLAME_FRAMES.map((frame, f) => (
+    <svg key={f} viewBox="0 0 14 14" shapeRendering="crispEdges" aria-hidden="true" className={`story-frame ${f ? 'absolute inset-0' : 'relative'}`} style={{ width: '100%', display: 'block', '--f': f, '--d': `${delay}ms` }}>
+      {frame.flatMap((row, y) => [...row].map((ch, x) => (FLAME_COLORS[ch] ? <rect key={`${x}-${y}`} x={x} y={y} width="1" height="1" fill={FLAME_COLORS[ch]} /> : null)))}
+    </svg>
+  ))
+}
