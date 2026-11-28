@@ -96,3 +96,53 @@ export const PixelTrophy = ({ size }) => (
     {TROPHY.flatMap((row, y) => [...row].map((ch, x) => (TROPHY_COLORS[ch] ? <rect key={`${x}-${y}`} x={x} y={y} width="1" height="1" fill={TROPHY_COLORS[ch]} /> : null)))}
   </svg>
 )
+
+// The five personas as mascots (16 × 16), with the sky they live in and an accent color for their slide
+export const MASCOTS = {
+  'Night Owl': {
+    map: ['..D..........D', '..DD........DD', '..DBBBBBBBBBBD', '.DBBBBBBBBBBBBD', '.DBWWWBBBBWWWBD', '.DWWKKWBBWKKWWD', '.DWWKKWBBWKKWWD', '.DBWWWBYYBWWWBD', '.DBBBBBYYBBBBBD', '.DBBLLLBBLLLBBD', '.DBLLLLLLLLLLBD', '.DBLLLLLLLLLLBD', '.DBBLLLLLLLLBBD', '..DBBBBBBBBBBD', '...DDDDDDDDDD', '....OO....OO'],
+    colors: { D: '#3b2412', B: '#8a5a2b', W: '#fff8e1', K: '#141020', Y: '#ffb02e', L: '#e9c99a', O: '#ff8a3d' },
+    sky: ['#120f3a', '#2b2370'], ink: '#f1edff', accent: '#a78bfa', light: false,
+  },
+  'Early Bird': {
+    map: ['', '......YYYY', '.....YYYYYY', '....YYYYYYYY', '....YYKYYYYY', '...OOYYYYYYYY', '..OOOYYYYYYYYY', '...OOYYYWWYYYY', '....YYYWWWWYYY', '....YYYYWWYYYY', '....YYYYYYYYY', '.....YYYYYYYY', '......YYYYYY', '.......O..O', '......OO.OO', ''],
+    colors: { Y: '#ffd23f', W: '#fff4b8', K: '#2a1400', O: '#ff7a1a' },
+    sky: ['#ff8f7a', '#ffd9a0'], ink: '#2a0f12', accent: '#ff7a1a', light: true,
+  },
+  'Morning Maker': {
+    map: ['....S...S...S', '.....S...S...S', '....S...S...S', '.....S...S...S', '', '..MMMMMMMMMM', '..MCCCCCCCCM', '..MMMMMMMMMMMM', '..MMMMMMMMMM.MM', '..MMWMMMMMMM..M', '..MMWMMMMMMM..M', '..MMMMMMMMMM.MM', '..MMMMMMMMMMMM', '..MMMMMMMMMM', '...MMMMMMMM', '.PPPPPPPPPPPP'],
+    colors: { S: '#ffffff', M: '#ff5a4e', C: '#5a3214', W: '#ffb3ab', P: '#1d4a6e' },
+    sky: ['#57bdf7', '#d2f0ff'], ink: '#062037', accent: '#ff5a4e', light: true,
+  },
+  'Daytime Shipper': {
+    map: ['.......Y', '...Y...Y...Y', '....Y.....Y', '......OOOO', '.....OOOOOO', 'YY..OOOOOOOO..YY', '...OKKKOOKKKO', '...OKKKKKKKKO', '...OOKKOOKKOO', '....OOOOOOOO', '....OOWOOWOO', '.....OOWWOO', '......OOOO', '....Y.....Y', '...Y...Y...Y', '.......Y'],
+    colors: { Y: '#fff1a8', O: '#ffc21a', K: '#141020', W: '#7a3d00' },
+    sky: ['#2a86f5', '#9fd4ff'], ink: '#03142e', accent: '#ffc21a', light: true,
+  },
+  'Evening Hacker': {
+    map: ['..K..........K', '..KK........KK', '..KGK......KGK', '..KGGKKKKKKGGK', '..KGGGGGGGGGGK', '.KGGGGGGGGGGGGK', '.KGGEEGGGGEEGGK', '.KGGEKGGGGEKGGK', '.KGGGGGPPGGGGGK', '.KGGGGGGGGGGGGK', '..KGGGGGGGGGGK', '...KKKKKKKKKK', '..LLLLLLLLLLLL', '..LSSSSSSSSSSL', '..LSSSSSSSSSSL', '.LLLLLLLLLLLLLL'],
+    colors: { K: '#1a1028', G: '#7c7a8c', E: '#a3e635', P: '#ff7eb6', L: '#c9ccd6', S: '#56d4e8' },
+    sky: ['#2b1460', '#ff8a5b'], ink: '#fff1e6', accent: '#ff8a5b', light: false,
+  },
+}
+
+/** A persona's mascot as wide as `size` (any CSS length). Rows shorter than 16 are padded with empty pixels. */
+export function Mascot({ name, size, className = '' }) {
+  const { map, colors } = MASCOTS[name]
+  const rows = map.map((r) => r.padEnd(16, '.'))
+  return (
+    <svg viewBox="0 0 16 16" shapeRendering="crispEdges" aria-hidden="true" className={className} style={{ width: size, height: 'auto', display: 'block' }}>
+      {rows.flatMap((row, y) => [...row].map((ch, x) => (colors[ch] ? <rect key={`${x}-${y}`} x={x} y={y} width="1" height="1" fill={colors[ch]} /> : null)))}
+    </svg>
+  )
+}
+
+// Sun and moon for the When slide's sky: Y gold, W shine, M moonlight
+const SUN = ['..YYY..', '.YYYYY.', 'YYYWYYY', 'YYWYYYY', 'YYYYYYY', '.YYYYY.', '..YYY..']
+const MOON = ['..MMM..', '.MMM...', 'MMM....', 'MMM....', 'MMM....', '.MMM...', '..MMM..']
+const SKY_COLORS = { Y: '#ffd23f', W: '#fff4b8', M: '#f4f1d8' }
+export const PixelSky = ({ moon, size }) => (
+  <svg viewBox="0 0 7 7" shapeRendering="crispEdges" aria-hidden="true" style={{ width: size, height: 'auto', display: 'block' }}>
+    {(moon ? MOON : SUN).flatMap((row, y) => [...row].map((ch, x) => (SKY_COLORS[ch] ? <rect key={`${x}-${y}`} x={x} y={y} width="1" height="1" fill={SKY_COLORS[ch]} /> : null)))}
+  </svg>
+)

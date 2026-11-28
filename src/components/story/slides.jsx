@@ -2,11 +2,11 @@
 // phone, in the desktop player and in the small poster on the Story tab.
 import { useContext, useEffect, useRef, useState } from 'react'
 import { PixelFire, PixelLogo } from '../pixel'
-import { fileLabels, fmt, isSolo, shortDay, summaryLabels, wallLayout } from '../../lib/story'
+import { fileLabels, fmt, isSolo, persona, shortDay, summaryLabels, wallLayout } from '../../lib/story'
 import { Identicon } from './art'
 import CalendarGrid, { GREENS } from './CalendarGrid'
-import { StoryPaused } from './context'
-import { PixelPage, PixelTrophy } from './pixelArt'
+import { StoryHold, StoryPaused } from './context'
+import { Mascot, MASCOTS, PixelPage, PixelSky, PixelTrophy } from './pixelArt'
 
 export const u = (n) => `${n}cqw`
 const d = (ms) => ({ '--d': `${ms}ms` })
@@ -273,55 +273,188 @@ function Streak({ s, theme }) {
   )
 }
 
-/** 24 bars around a clock face; the peak hour lit. */
-function HourRing({ hours, peak, fg, hot }) {
-  const max = Math.max(1, ...hours)
+// The sky through the day, as color stops by hour; the When slide's background is the sky at the shown time
+const SKY = [[0, '#0b0d2e'], [5, '#2b2160'], [7, '#ff9a7a'], [9, '#6cc6ff'], [13, '#3d97ff'], [17, '#ffb36b'], [19, '#a2457a'], [21, '#2b1460'], [24, '#0b0d2e']]
+const rgb = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16))
+export function skyAt(t) {
+  const i = SKY.findIndex(([h]) => h > t)
+  const [[h0, c0], [h1, c1]] = [SKY[i - 1], SKY[i]]
+  const k = (t - h0) / (h1 - h0)
+  const [a, b] = [rgb(c0), rgb(c1)]
+  return `#${a.map((v, j) => Math.round(v + (b[j] - v) * k).toString(16).padStart(2, '0')).join('')}`
+}
+const daylight = (t) => t >= 7 && t < 17.5
+const hh = (h) => String(h).padStart(2, '0')
+const reducedMotion = () => typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+
+/** Plays the clock from midnight to `to` once (eased in and out), holding while the Story is paused. */
+function useTimeLapse(to, ms = 1700, delay = 600) {
+  const paused = useContext(StoryPaused)
+  const pausedRef = useRef(paused)
+  pausedRef.current = paused
+  const [state, setState] = useState(() => (reducedMotion() ? { t: to, landed: true } : { t: 0, landed: false }))
+  useEffect(() => {
+    if (reducedMotion()) return
+    let raf = 0
+    let elapsed = -delay
+    let prev = performance.now()
+    const ease = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2)
+    const tick = (now) => {
+      if (!pausedRef.current) elapsed += now - prev
+      prev = now
+      const k = Math.min(1, Math.max(0, elapsed / ms))
+      setState({ t: ease(k) * to, landed: k >= 1 })
+      if (k < 1) raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  }, [to, ms, delay])
+  return [state, (t) => setState({ t, landed: true })]
+}
+
+/**
+ * When: a time-lapse of the day from midnight to the busiest hour. The sky, the sun or moon and whoever is awake
+ * (the persona of that hour) follow the clock; once it lands, the viewer can drag through the day themselves.
+ */
+function When({ s }) {
+  const [{ t, landed }, setT] = useTimeLapse(s.peakHour)
+  const hold = useContext(StoryHold)
+  const bars = useRef(null)
+  const hour = Math.min(23, Math.floor(t))
+  const awake = persona(hour).name
+  const accent = MASCOTS[s.persona.name].accent
+  const ink = daylight(t) ? '#0b1a33' : '#f1edff'
+  const max = Math.max(1, ...s.hours)
+  const atPeak = Math.round(t) === s.peakHour
+
+  // a press on the day explores it: it holds the Story and must not count as a tap to the next slide
+  const scrub = (e) => {
+    const r = bars.current.getBoundingClientRect()
+    setT(Math.max(0, Math.min(23.99, ((e.clientX - r.left) / r.width) * 24)))
+  }
+  const onPointerDown = (e) => {
+    if (!landed) return
+    e.stopPropagation()
+    e.currentTarget.setPointerCapture(e.pointerId)
+    hold(true)
+    scrub(e)
+  }
+  const release = (e) => {
+    e.stopPropagation()
+    hold(false)
+  }
+
   return (
-    <svg viewBox="0 0 100 100" className="story-pop" style={{ ...d(200), width: u(66), height: u(66) }} aria-hidden="true">
-      <circle cx="50" cy="50" r="19" fill="none" stroke={fg} strokeOpacity="0.25" strokeWidth="0.6" />
-      {hours.map((n, h) => {
-        const len = 3 + (n / max) * 24
-        return (
-          <g key={h} transform={`rotate(${h * 15} 50 50)`}>
-            <rect
-              className="story-grow"
-              x="48.2"
-              y={50 - 22 - len}
-              width="3.6"
-              height={len}
-              fill={h === peak ? hot : fg}
-              fillOpacity={h === peak ? 1 : 0.55}
-              style={d(300 + h * 25)}
-            />
-          </g>
-        )
-      })}
-      {[0, 6, 12, 18].map((h) => {
-        const a = (h * 15 - 90) * (Math.PI / 180)
-        return (
-          <text key={h} x={50 + Math.cos(a) * 13} y={50 + Math.sin(a) * 13 + 1.4} textAnchor="middle" fontSize="4" fontWeight="700" fill={fg} fillOpacity="0.7">
-            {String(h).padStart(2, '0')}
-          </text>
-        )
-      })}
-    </svg>
+    <div className="absolute inset-0 overflow-hidden" style={{ background: `linear-gradient(${skyAt(t)}, ${skyAt((t + 2) % 24)})`, color: ink }}>
+      <div className="absolute inset-x-0 text-center" style={{ top: u(17), padding: `0 ${u(8)}` }}>
+        <div className="font-mono font-extrabold tabular-nums" style={{ fontSize: u(15), lineHeight: 1, letterSpacing: '-0.03em' }}>
+          {hh(hour)}:{landed ? '00' : hh(Math.floor((t % 1) * 60))}
+        </div>
+        <div className="story-reveal" data-on={landed || undefined} style={{ marginTop: u(2) }}>
+          <h2 className="m-0 font-extrabold text-balance" style={{ fontSize: u(5.6), lineHeight: 1.15 }}>
+            {isSolo(s) ? 'You’re a' : 'This team is a'} <span style={{ color: accent }}>{s.persona.name}</span>
+          </h2>
+          <p className="m-0 font-medium text-balance" style={{ fontSize: u(3.6), lineHeight: 1.35, marginTop: u(1.5), opacity: 0.85 }}>
+            {atPeak ? `Most commits landed on ${s.peakWeekday} around ${s.peakHourLabel}. ${s.persona.line}` : `${fmt(s.hours[hour])} ${s.hours[hour] === 1 ? 'commit' : 'commits'} at ${hh(hour)}:00.`}
+          </p>
+        </div>
+      </div>
+      {/* the sun or moon riding its arc across the sky */}
+      <div className="absolute" style={{ left: u(4 + (t / 24) * 80), top: u(104 - Math.sin((Math.PI * t) / 24) * 34) }}>
+        <PixelSky moon={!(t >= 6 && t < 19)} size={u(13)} />
+      </div>
+      {/* whoever is awake at this hour, at the desk */}
+      <div className="absolute inset-x-0 flex justify-center" style={{ bottom: u(42) }}>
+        <Mascot key={awake} name={awake} size={u(30)} className="story-swap" />
+      </div>
+      <div className="absolute inset-x-0" style={{ bottom: u(36), height: u(6), background: daylight(t) ? 'rgba(11,26,51,0.25)' : 'rgba(0,0,0,0.35)' }} />
+      <div
+        ref={bars}
+        role="img"
+        aria-label={`Commits by hour of the day, most at ${s.peakHourLabel}`}
+        className="absolute flex items-end"
+        style={{ left: u(7), right: u(7), bottom: u(14), height: u(18), gap: u(0.5), touchAction: 'none', cursor: landed ? 'ew-resize' : 'default' }}
+        onPointerDown={onPointerDown}
+        onPointerMove={(e) => e.buttons && landed && scrub(e)}
+        onPointerUp={release}
+        onPointerCancel={release}
+      >
+        {s.hours.map((n, h) => (
+          <span key={h} className="flex-1" style={{ height: `${8 + (n / max) * 92}%`, borderRadius: u(0.4), background: h === hour ? accent : ink, opacity: h === hour ? 1 : h <= t ? 0.55 : 0.2 }} />
+        ))}
+      </div>
+      <p className="story-reveal absolute inset-x-0 m-0 text-center font-mono" data-on={landed || undefined} style={{ bottom: u(8), fontSize: u(2.8), '--d': '600ms' }}>
+        ← drag through the day →
+      </p>
+    </div>
   )
 }
 
-function Clock({ s, theme }) {
+/** The coder card: the persona as a holographic trading card, dealt face down from across the table and flipped over. */
+function CoderCard({ s }) {
+  const m = MASCOTS[s.persona.name]
+  const max = Math.max(1, ...s.hours)
+  const stats = [
+    ['Peak hour', s.peakHourLabel],
+    ['Best day', s.peakWeekday.replace(/s$/, '')],
+    ['Late nights', fmt(s.lateNight)],
+    ['Weekends', `${pct(s.weekendShare)}%`],
+  ]
   return (
-    <Center>
-      <Headline size={6}>{isSolo(s) ? 'You’re a' : 'This team is a'}</Headline>
-      <Headline delay={150} size={12} className="mt-[1cqw]">
-        <span style={{ color: theme.hot }}>{s.persona.name}</span>
-      </Headline>
-      <div style={{ margin: `${u(5)} 0` }}>
-        <HourRing hours={s.hours} peak={s.peakHour} fg={theme.fg} hot={theme.hot} />
+    <div className="absolute inset-0 flex flex-col overflow-hidden" style={{ background: `radial-gradient(circle at 50% 45%, ${m.sky[0]}, #0b0a1a 70%)`, padding: `${u(17)} ${u(10)} ${u(14)}` }}>
+      <p className="story-rise m-0 text-center font-mono font-medium uppercase" style={{ ...d(0), fontSize: u(3.4), letterSpacing: '0.2em', color: m.accent }}>
+        {isSolo(s) ? 'Your coder card' : 'Your team’s coder card'}
+      </p>
+      <div className="relative flex flex-1 items-center">
+        {/* the card's shadow on the table: small while it flies, full as it lands, lighter while it lifts to flip */}
+        <div aria-hidden="true" className="story-deal-shadow absolute inset-x-[8%] rounded-[50%]" style={{ ...d(200), bottom: '8%', height: u(8), background: 'rgba(0,0,0,0.55)', filter: `blur(${u(2.5)})` }} />
+        {/* the fade sits on its own wrapper, which also holds the perspective: opacity on the 3D element itself would
+            flatten it (no back face), and between the card and a perspective further up it would cancel the depth */}
+        <div className="story-deal-in w-full" style={{ ...d(200), perspective: u(140) }}>
+        <div className="story-deal relative w-full" style={{ ...d(200), transformStyle: 'preserve-3d' }}>
+          <div className="relative overflow-hidden" style={{ backfaceVisibility: 'hidden', borderRadius: u(4), padding: u(1.8), background: `linear-gradient(135deg, #ffe27a, ${m.accent} 45%, #ffe27a 60%, #b8f34a)` }}>
+            <div style={{ background: '#fffaf0', borderRadius: u(2.6), padding: u(3), color: '#1a1028' }}>
+              <div className="flex items-baseline justify-between" style={{ gap: u(2) }}>
+                <span className="truncate font-extrabold" style={{ fontSize: u(6.2), letterSpacing: '-0.02em' }}>{s.persona.name}</span>
+                <span className="font-mono font-bold tabular-nums" style={{ fontSize: u(3.4), color: '#d6286b' }}>★ {fmt(s.hours[s.peakHour])}</span>
+              </div>
+              <div className="relative grid place-items-center overflow-hidden" style={{ marginTop: u(2), aspectRatio: '4 / 3', borderRadius: u(1.5), background: `linear-gradient(${m.sky[0]}, ${m.sky[1]})`, boxShadow: `inset 0 0 0 ${u(0.7)} #1a1028` }}>
+                <Mascot name={s.persona.name} size={u(30)} />
+                <span className="absolute inset-x-0 bottom-0" style={{ height: u(4), background: 'rgba(0,0,0,0.18)' }} />
+              </div>
+              <p className="m-0 italic" style={{ fontSize: u(3.4), marginTop: u(2.2), opacity: 0.75 }}>“{s.persona.line}”</p>
+              <div className="grid grid-cols-2 font-mono" style={{ gap: `${u(1.6)} ${u(3)}`, marginTop: u(2.6), fontSize: u(2.8) }}>
+                {stats.map(([k, v]) => (
+                  <div key={k} className="flex justify-between" style={{ borderBottom: `${u(0.3)} solid rgba(26,16,40,0.15)`, paddingBottom: u(0.6) }}>
+                    <span style={{ opacity: 0.6 }}>{k}</span>
+                    <span className="font-bold">{v}</span>
+                  </div>
+                ))}
+              </div>
+              {/* the day as an energy bar */}
+              <div className="flex items-end" style={{ gap: u(0.35), height: u(6), marginTop: u(3) }}>
+                {s.hours.map((n, h) => (
+                  <span key={h} className="flex-1" style={{ height: `${10 + (n / max) * 90}%`, background: h === s.peakHour ? m.accent : '#1a1028', opacity: h === s.peakHour ? 1 : 0.25 + (n / max) * 0.5 }} />
+                ))}
+              </div>
+            </div>
+            {/* one holo sweep once the card has settled */}
+            <div aria-hidden="true" className="story-holo pointer-events-none absolute inset-0" style={d(2000)} />
+          </div>
+          {/* the back, seen while it flies in */}
+          <div aria-hidden="true" className="absolute inset-0 grid place-items-center" style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)', borderRadius: u(4), background: `repeating-linear-gradient(45deg, #2a1a6e 0 ${u(2)}, #3a2590 ${u(2)} ${u(4)})`, boxShadow: `inset 0 0 0 ${u(1.8)} #ffd23f` }}>
+            <span className="flex items-center font-mono font-bold" style={{ gap: u(2), fontSize: u(5), color: '#ffd23f', letterSpacing: '0.2em' }}>
+              <PixelLogo size={22} />
+              REPOSTORY
+            </span>
+          </div>
+        </div>
+        </div>
       </div>
-      <Sub delay={700} className="!mt-0" bg={theme.bg}>
-        Most commits landed on {s.peakWeekday} around {s.peakHourLabel}. {s.persona.line}
-      </Sub>
-    </Center>
+      <p className="story-rise m-0 text-center font-medium text-balance" style={{ ...d(2100), fontSize: u(4), lineHeight: 1.35, color: '#fff' }}>
+        {isSolo(s) ? 'You’re a' : 'This team is a'} <b style={{ color: m.accent }}>{s.persona.name}</b>: most commits on {s.peakWeekday} around {s.peakHourLabel}.
+      </p>
+    </div>
   )
 }
 
@@ -537,7 +670,9 @@ export const SLIDES = [
   { id: 'calendar', label: 'Calendar', theme: { bg: '#07120d', fg: '#eafff3' }, duration: 8500, render: Calendar, when: (s) => s.cal?.activeDays >= 1 },
   { id: 'month', label: 'Best month', theme: { bg: '#b8f34a', fg: '#0e2a04' }, duration: 8000, render: BestMonth, when: (s) => s.cal?.month.commits >= 10 },
   { id: 'streak', label: 'Streak', theme: { bg: '#0b0d12', fg: '#ffffff' }, duration: 8000, render: Streak, when: (s) => s.cal?.streak.len >= 2 },
-  { id: 'clock', label: 'When', theme: { bg: '#2a1a6e', fg: '#f1edff', hot: '#a3e635' }, backdrop: { variant: 'scatter', a: '#56d4e8', b: '#7b5cff', seed: 3 }, duration: 7000, render: Clock },
+  // the sky it lands on picks the player's chrome: dark on a daytime sky, light at night
+  { id: 'clock', label: 'When', theme: (s) => ({ bg: skyAt(s.peakHour), fg: daylight(s.peakHour) ? '#0b1a33' : '#f1edff' }), duration: 7500, render: When },
+  { id: 'card', label: 'Coder card', theme: { bg: '#0b0a1a', fg: '#ffffff' }, duration: 7500, render: CoderCard },
   { id: 'busiest', label: 'Biggest day', theme: { bg: '#ffcc4d', fg: '#2b1600' }, duration: 6000, render: Busiest, when: (s) => s.busiest?.count >= 3 },
   { id: 'authors', label: 'Contributors', theme: { bg: '#12452f', fg: '#eafff3', hot: '#ffd23f' }, duration: 7500, render: Contributors, when: (s) => s.top.length >= 1 },
   { id: 'files', label: 'Files', theme: { bg: '#f5d547', fg: '#1a1500', card: '#fff8dc' }, backdrop: { variant: 'checker', a: '#e3be1f', b: '#f5d547' }, duration: 8000, render: Files, when: (s) => s.hotspots.length >= 3 },
@@ -545,4 +680,5 @@ export const SLIDES = [
   { id: 'summary', label: 'Summary', theme: { bg: '#15171c', fg: '#ffffff' }, render: (props) => <Summary {...props} actions /> },
 ]
 
-export const slidesFor = (s) => SLIDES.filter((x) => !x.when || x.when(s))
+/** The slides this Story shows, with any theme that depends on the Story (a function of it) worked out. */
+export const slidesFor = (s) => SLIDES.filter((x) => !x.when || x.when(s)).map((x) => (typeof x.theme === 'function' ? { ...x, theme: x.theme(s) } : x))

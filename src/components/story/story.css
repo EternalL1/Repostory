@@ -112,6 +112,79 @@
   animation-delay: var(--d, 0ms);
 }
 
+/* When: the headline shows once the time-lapse lands; the mascot on duty swaps with a quick pop */
+.story-reveal {
+  opacity: 0;
+  transform: translateY(2cqw);
+  transition: opacity 300ms var(--ease-out-strong), transform 300ms var(--ease-out-strong);
+  transition-delay: var(--d, 0ms);
+}
+.story-reveal[data-on] {
+  opacity: 1;
+  transform: none;
+}
+@keyframes story-swap {
+  from { opacity: 0; transform: scale(0.6); }
+}
+.story-swap {
+  animation: story-swap 220ms var(--ease-out-strong) both;
+}
+
+/* Coder card: dealt from across the table. It flies in face down from far away (ease-out), lands, lifts toward the
+   viewer as it flips over (ease-in-out), then settles. Its shadow follows its height above the table. */
+@keyframes story-deal {
+  0% {
+    transform: translate3d(-20cqw, -70cqw, -160cqw) rotateX(60deg) rotateY(180deg) rotateZ(-24deg);
+    animation-timing-function: cubic-bezier(0.23, 1, 0.32, 1);
+  }
+  50% {
+    transform: translate3d(0, 2cqw, -8cqw) rotateX(18deg) rotateY(180deg) rotateZ(3deg);
+    animation-timing-function: cubic-bezier(0.77, 0, 0.175, 1);
+  }
+  82% {
+    transform: translate3d(0, -4cqw, 26cqw) rotateX(-4deg) rotateY(-6deg) rotateZ(-1deg);
+    animation-timing-function: cubic-bezier(0.23, 1, 0.32, 1);
+  }
+  100% { transform: none; }
+}
+@keyframes story-deal-shadow {
+  0% { opacity: 0; transform: scale(0.35); }
+  50% { opacity: 1; transform: scale(1.02); }
+  70% { opacity: 0.45; transform: scale(0.8); }
+  100% { opacity: 1; transform: scale(1); }
+}
+@keyframes story-holo {
+  from { transform: translateX(-130%); }
+  to { transform: translateX(130%); }
+}
+@keyframes story-deal-in {
+  from { opacity: 0; }
+}
+.story-deal-in {
+  animation: story-deal-in 220ms ease-out both;
+  animation-delay: var(--d, 0ms);
+}
+.story-deal {
+  animation: story-deal 1800ms both;
+  animation-delay: var(--d, 0ms);
+}
+.story-deal-shadow {
+  animation: story-deal-shadow 1800ms var(--ease-in-out-strong) both;
+  animation-delay: var(--d, 0ms);
+}
+.story-holo {
+  background: linear-gradient(115deg, transparent 30%, rgba(255, 255, 255, 0.65) 45%, rgba(163, 230, 53, 0.35) 52%, rgba(255, 126, 182, 0.3) 58%, transparent 70%);
+  mix-blend-mode: overlay;
+  transform: translateX(-130%);
+  animation: story-holo 900ms var(--ease-in-out-strong) both;
+  animation-delay: var(--d, 0ms);
+}
+
+.story-paused .story-swap,
+.story-paused .story-deal,
+.story-paused .story-deal-in,
+.story-paused .story-deal-shadow,
+.story-paused .story-holo,
 .story-paused .story-drop,
 .story-paused .story-stamp,
 .story-paused .story-pin,
@@ -149,8 +222,19 @@
     animation-name: story-fade;
     animation-delay: 0ms !important;
   }
-  .story-shine {
+  .story-shine,
+  .story-holo {
     display: none;
+  }
+  .story-swap,
+  .story-deal,
+  .story-deal-shadow {
+    animation-name: story-fade;
+    animation-delay: 0ms !important;
+  }
+  .story-reveal {
+    transition: opacity 200ms ease;
+    transform: none;
   }
 }
 @keyframes story-fade {
