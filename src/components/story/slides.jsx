@@ -299,8 +299,13 @@ function Streak({ s }) {
       {len > logs && (
         <div className="story-rise absolute inset-x-0 text-center font-mono font-bold" style={{ ...d(flare), bottom: u(24), fontSize: u(3.2), color: '#ffb36b' }}>× {fmt(len)} logs</div>
       )}
-      {Array.from({ length: 6 }, (_, i) => (
-        <span key={i} className="story-spark absolute" style={{ ...d(flare + 300 + i * 160), left: `${44 + ((i * 7) % 14)}%`, bottom: u(37 + size * 0.8), width: u(0.9), height: u(0.9), background: '#ffd23f' }} />
+      {/* sparks keep rising from the fire, staggered, each drifting its own way */}
+      {Array.from({ length: 7 }, (_, i) => (
+        <span
+          key={i}
+          className="story-spark absolute"
+          style={{ ...d(flare + 300 + i * 260), '--x': u([-4, 3, -2, 5, -5, 2, 4][i]), left: `${42 + ((i * 7) % 16)}%`, bottom: u(37 + size * 0.75), width: u(i % 3 ? 0.9 : 1.2), height: u(i % 3 ? 0.9 : 1.2), background: i % 2 ? '#ffd23f' : '#ff8a1f' }}
+        />
       ))}
     </div>
   )
