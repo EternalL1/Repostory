@@ -183,7 +183,7 @@
 }
 
 /* Streak: logs drop onto the pile, the fire flares once, then flickers through three frames like a GIF (each frame
-   shows for a third of the loop, staggered by --f); a few sparks rise once */
+   shows for a third of the loop, staggered by --f); sparks keep rising from it, each drifting by its own --x */
 @keyframes story-log {
   from { opacity: 0; transform: translateY(-8cqw) rotate(var(--r, 0deg)); }
 }
@@ -196,9 +196,9 @@
   33.333% { opacity: 0; }
 }
 @keyframes story-spark {
-  from { opacity: 0; transform: translateY(0); }
-  20% { opacity: 1; }
-  to { opacity: 0; transform: translateY(-30cqw); }
+  from { opacity: 0; transform: translate(0, 0); }
+  15% { opacity: 1; }
+  to { opacity: 0; transform: translate(var(--x, 0), -30cqw); }
 }
 .story-log {
   animation: story-log 300ms var(--ease-out-strong) both;
@@ -219,7 +219,7 @@
 }
 .story-spark {
   opacity: 0;
-  animation: story-spark 1400ms ease-out both;
+  animation: story-spark 1800ms ease-out infinite backwards;
   animation-delay: var(--d, 0ms);
 }
 
