@@ -404,6 +404,16 @@ function When({ s }) {
   )
 }
 
+// Every trading card lists a weakness: one joke per persona, with a real number where it lands
+const WEAKNESS = {
+  // the number keeps its noun on the same line (non-breaking space), and one commit "says"
+  'Night Owl': (s) => ['sunlight.', s.lateNight === 1 ? '1\u00a0commit after 10 pm says it all.' : `${fmt(s.lateNight)}\u00a0commits after 10 pm say it all.`],
+  'Early Bird': () => ['anything after 6 pm.', 'Already shipped before you woke up.'],
+  'Morning Maker': () => ['meetings after lunch.', 'Runs on dangerously strong coffee.'],
+  'Daytime Shipper': () => ['a lunch that runs long.', 'Ships at peak sunlight.'],
+  'Evening Hacker': () => ['“just one more commit.”', 'Dinner is getting cold.'],
+}
+
 /** The coder card: the persona as a holographic trading card, dealt face down from across the table and flipped over. */
 function CoderCard({ s }) {
   const m = MASCOTS[s.persona.name]
@@ -465,9 +475,10 @@ function CoderCard({ s }) {
         </div>
         </div>
       </div>
-      <p className="story-rise m-0 text-center font-medium text-balance" style={{ ...d(2100), fontSize: u(4), lineHeight: 1.35, color: '#fff' }}>
-        {/* When just said the type and the hour; this line gives a reason to share the card instead */}
-        One of {Object.keys(MASCOTS).length} coder types. {isSolo(s) ? 'Which one are your friends?' : 'How do other teams compare?'}
+      {/* When just said the type and the hour; the card ends on its weakness instead */}
+      <p className="story-rise m-0 text-center font-medium text-balance" style={{ ...d(2100), fontSize: u(4.2), lineHeight: 1.35, color: '#fff' }}>
+        <span className="font-mono font-bold uppercase" style={{ color: m.accent, fontSize: u(3.2), letterSpacing: '0.12em' }}>Weakness: </span>
+        {WEAKNESS[s.persona.name](s)[0]} <span style={{ opacity: 0.8 }}>{WEAKNESS[s.persona.name](s)[1]}</span>
       </p>
     </div>
   )
