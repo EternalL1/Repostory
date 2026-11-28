@@ -4,6 +4,9 @@ import type { Metadata, Viewport } from 'next'
 import '@fontsource-variable/mona-sans'
 import '@fontsource/monaspace-neon/400.css'
 import '@fontsource/monaspace-neon/500.css'
+// bold mono is used by the When clock, the coder card and the calendar's dates: real weights, not faux bold
+import '@fontsource/monaspace-neon/700.css'
+import '@fontsource/monaspace-neon/800.css'
 import './globals.css'
 
 // absolute base for share-card URLs: the production domain on Vercel, localhost in development

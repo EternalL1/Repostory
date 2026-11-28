@@ -32,7 +32,7 @@ function fitPath(ctx: CanvasRenderingContext2D, label: string, max: number): str
 
 export async function renderSummaryPng(s: StoryStats): Promise<Blob | null> {
   try {
-    await Promise.all([document.fonts.load(`800 40px ${SANS}`), document.fonts.load(`500 40px ${MONO}`)])
+    await Promise.all([document.fonts.load(`800 40px ${SANS}`), document.fonts.load(`500 40px ${MONO}`), document.fonts.load(`700 40px ${MONO}`)])
   } catch {
     /* fall back to whatever font is there */
   }
