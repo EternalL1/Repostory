@@ -6,7 +6,7 @@ import { clock12, clock12Of, fileLabels, fmt, isSolo, MONTHS, persona, summaryLa
 import { Identicon } from './art'
 import CalendarGrid, { GREENS } from './CalendarGrid'
 import { StoryHold, StoryPaused } from './context'
-import { Mascot, MASCOTS, PixelFlame, PixelPage, PixelSky, PixelTrophy } from './pixelArt'
+import { Mascot, MASCOTS, PixelFlame, PixelLog, PixelPage, PixelSky, PixelTrophy } from './pixelArt'
 
 export const u = (n) => `${n}cqw`
 const d = (ms) => ({ '--d': `${ms}ms` })
@@ -252,6 +252,9 @@ function streakDates(from, to, withYear) {
   const [y0, y1] = [new Date(from).getUTCFullYear(), new Date(to).getUTCFullYear()]
   return y0 === y1 ? `${md(from)} to ${md(to)}, ${y1}` : `${md(from)}, ${y0} to ${md(to)}, ${y1}`
 }
+// the campfire's logs, in cqw (14 × 4 pixels each)
+const LOG_W = 13
+const LOG_H = (LOG_W * 4) / 14
 // stars over the campfire: fixed spots, so they sit still
 const STARS = Array.from({ length: 22 }, (_, i) => [(i * 37) % 97, 8 + ((i * 53) % 60), i % 3 === 0])
 
@@ -264,6 +267,10 @@ function Streak({ s }) {
   const logs = Math.min(len, 9)
   const flare = 200 + logs * 110
   const size = 30 + Math.min(1, Math.log2(len) / 6) * 34
+  // the fire sits on the pile, its base tucked just behind the top row of logs
+  const rows = logs > 7 ? 3 : logs > 4 ? 2 : 1
+  const pileTop = 30 + (rows - 1) * (LOG_H - 0.6) + LOG_H
+  const fireBase = pileTop - LOG_H * 0.6
   return (
     <div className="absolute inset-0 overflow-hidden" style={{ background: 'linear-gradient(#0a0c26, #241a4a 70%, #2c1d33)' }}>
       {STARS.map(([x, y, big], i) => (
@@ -278,21 +285,19 @@ function Streak({ s }) {
       </div>
       {/* the glow on the ground, the fire, the pile */}
       <div className="absolute rounded-[50%]" style={{ left: '50%', bottom: u(30), width: u(size * 2.4), height: u(size * 0.7), marginLeft: u(-size * 1.2), background: 'radial-gradient(closest-side, rgba(255,138,31,0.45), transparent)' }} />
-      <div className="story-flame absolute" style={{ ...d(flare), left: '50%', bottom: u(37), width: u(size), marginLeft: u(-size / 2) }}>
+      <div className="story-flame absolute" style={{ ...d(flare), left: '50%', bottom: u(fireBase), width: u(size), marginLeft: u(-size / 2) }}>
         <PixelFlame />
       </div>
-      <div className="absolute" style={{ left: '50%', bottom: u(30), width: u(56), marginLeft: u(-28), height: u(14) }}>
+      {/* the pile, built a log a day: four on the ground, three in the gaps above, two on top */}
+      <div className="absolute" style={{ left: '50%', bottom: u(30), width: u(LOG_W * 4), marginLeft: u(-LOG_W * 2), height: u(LOG_H * 3) }}>
         {Array.from({ length: logs }, (_, i) => {
           const row = i < 4 ? 0 : i < 7 ? 1 : 2
-          const count = [4, 3, 2][row]
           const inRow = i - [0, 4, 7][row]
-          const r = (i % 2 ? 1 : -1) * (4 + (i % 3) * 3)
+          const inThisRow = Math.min([4, 3, 2][row], logs - [0, 4, 7][row]) // a row not yet full sits centered
           return (
-            <span
-              key={i}
-              className="story-log absolute"
-              style={{ ...d(200 + i * 110), '--r': `${r}deg`, left: u(28 - (count * 12) / 2 + inRow * 12), bottom: u(row * 4), width: u(13), height: u(3.6), background: 'linear-gradient(#a0602a, #6b3a14)', borderRadius: u(1), boxShadow: `inset ${u(-1)} 0 0 #4a2610`, transform: `rotate(${r}deg)` }}
-            />
+            <div key={i} className="story-log absolute" style={{ ...d(200 + i * 110), left: u(((4 - inThisRow) * LOG_W) / 2 + inRow * LOG_W), bottom: u(row * (LOG_H - 0.6)), width: u(LOG_W) }}>
+              <PixelLog />
+            </div>
           )
         })}
       </div>
@@ -304,7 +309,7 @@ function Streak({ s }) {
         <span
           key={i}
           className="story-spark absolute"
-          style={{ ...d(flare + 300 + i * 260), '--x': u([-4, 3, -2, 5, -5, 2, 4][i]), left: `${42 + ((i * 7) % 16)}%`, bottom: u(37 + size * 0.75), width: u(i % 3 ? 0.9 : 1.2), height: u(i % 3 ? 0.9 : 1.2), background: i % 2 ? '#ffd23f' : '#ff8a1f' }}
+          style={{ ...d(flare + 300 + i * 260), '--x': u([-4, 3, -2, 5, -5, 2, 4][i]), left: `${42 + ((i * 7) % 16)}%`, bottom: u(fireBase + size * 0.75), width: u(i % 3 ? 0.9 : 1.2), height: u(i % 3 ? 0.9 : 1.2), background: i % 2 ? '#ffd23f' : '#ff8a1f' }}
         />
       ))}
     </div>

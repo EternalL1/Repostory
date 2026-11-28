@@ -157,3 +157,12 @@ export const PixelFlame = () => (
     {FLAME.flatMap((row, y) => [...row].map((ch, x) => (FLAME_COLORS[ch] ? <rect key={`${x}-${y}`} x={x} y={y} width="1" height="1" fill={FLAME_COLORS[ch]} /> : null)))}
   </svg>
 )
+
+// A log for the campfire, lying on its side with its end grain showing: T tan ring, L light core, B bark, D shadow
+const LOG = ['.TTBBBBBBBBBB.', 'TLTBBBBBBBBBBB', 'TLTDBBBBBBBBBB', '.TTDDDDDDDDDD.']
+const LOG_COLORS = { T: '#d9a066', L: '#f0c890', B: '#8a5228', D: '#5a3214' }
+export const PixelLog = () => (
+  <svg viewBox="0 0 14 4" shapeRendering="crispEdges" aria-hidden="true" style={{ width: '100%', display: 'block' }}>
+    {LOG.flatMap((row, y) => [...row].map((ch, x) => (LOG_COLORS[ch] ? <rect key={`${x}-${y}`} x={x} y={y} width="1" height="1" fill={LOG_COLORS[ch]} /> : null)))}
+  </svg>
+)

@@ -185,7 +185,7 @@
 /* Streak: logs drop onto the pile, the fire flares once and then holds still; sparks keep rising from it, each
    drifting by its own --x */
 @keyframes story-log {
-  from { opacity: 0; transform: translateY(-8cqw) rotate(var(--r, 0deg)); }
+  from { opacity: 0; transform: translateY(-8cqw); }
 }
 @keyframes story-flame {
   from { opacity: 0; transform: scale(0.3); }
