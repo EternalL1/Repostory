@@ -2,7 +2,7 @@
 // phone, in the desktop player and in the small poster on the Story tab.
 import { useContext, useEffect, useRef, useState } from 'react'
 import { PixelFire, PixelLogo } from '../pixel'
-import { clock12, clock12Of, fileLabels, fmt, isSolo, persona, shortDay, summaryLabels, wallLayout } from '../../lib/story'
+import { clock12, clock12Of, fileLabels, fmt, isSolo, persona, shortDay, summaryLabels } from '../../lib/story'
 import { Identicon } from './art'
 import CalendarGrid, { GREENS } from './CalendarGrid'
 import { StoryHold, StoryPaused } from './context'
@@ -613,41 +613,31 @@ function Word({ s }) {
 }
 
 /** The poster at the end: everything on one card. Also drawn to a PNG by lib/storyImage.js. */
-// The Summary hero's contribution wall, in cqw: as wide as the hero less its padding, at most WALL_H tall. A short
-// history is one strip and the hero shrinks around it. storyImage draws the same.
-export const WALL = { pad: 4, w: 78, h: 39 }
-export const wallHeight = ({ cols, rows }) => Math.min(WALL.h, (WALL.w * rows) / cols)
-
-/** Every week of the history as one wall of green squares, folded into bands to fill its box. */
-function ContributionWall({ weeks }) {
-  const layout = wallLayout(weeks.length, WALL.w / WALL.h)
-  const { cols, rows } = layout
-  return (
-    <svg viewBox={`0 0 ${cols} ${rows}`} shapeRendering="crispEdges" aria-hidden="true" className="w-full" style={{ height: u(wallHeight(layout)) }}>
-      {weeks.flatMap((week, i) =>
-        week.map((c, k) => (c.out ? null : <rect key={`${i}-${k}`} x={i % cols} y={Math.floor(i / cols) * 8 + k} width="0.82" height="0.82" fill={GREENS[c.level]} />)),
-      )}
-    </svg>
-  )
-}
+// The Summary hero, in cqw: the persona's mascot in its own sky, its name on a sticker. storyImage draws the same.
+export const HERO = { h: 46, mascot: 28, ground: 8 }
 
 export function Summary({ s, animate = true, actions = false }) {
   const a = animate ? 'story-rise' : ''
+  const hero = MASCOTS[s.persona.name]
   return (
     <div className="relative flex h-full flex-col" style={{ padding: `${u(13)} ${u(7)} ${actions ? u(24) : u(6)}` }}>
       <div className={`${a} flex items-center justify-between font-mono`} style={{ ...d(0), fontSize: u(3.4) }}>
         <span className="truncate opacity-80">{s.name}</span>
         <span className="font-bold" style={{ color: '#b8f34a' }}>{s.year}</span>
       </div>
-      {/* hero: the whole history as one contribution wall */}
-      {s.cal && (
-        <div className={`${a} relative`} style={{ ...d(100), marginTop: u(3), background: '#0b0d12', padding: `${u(WALL.pad)} ${u(WALL.pad)} ${u(3)}` }}>
-          <ContributionWall weeks={s.cal.weeks} />
-          <div className="font-mono" style={{ fontSize: u(3), lineHeight: 1.2, marginTop: u(2.4), color: 'rgba(255,255,255,0.7)' }}>
-            <span className="font-bold" style={{ color: GREENS[4] }}>{fmt(s.cal.activeDays)}</span> {s.cal.activeDays === 1 ? 'day' : 'days'} in the green
-          </div>
+      {/* hero: whoever this Story turned out to be, the persona's mascot in its sky */}
+      <div className={`${a} relative overflow-hidden`} style={{ ...d(100), marginTop: u(3), height: u(HERO.h), background: `linear-gradient(${hero.sky[0]}, ${hero.sky[1]})` }}>
+        <div className="absolute inset-x-0 bottom-0" style={{ height: u(HERO.ground), background: 'rgba(0,0,0,0.18)' }} />
+        <div className="absolute" style={{ left: '50%', bottom: u(HERO.ground - 2), marginLeft: u(-HERO.mascot / 2) }}>
+          <Mascot name={s.persona.name} size={u(HERO.mascot)} />
         </div>
-      )}
+        <span className="absolute font-extrabold" style={{ left: u(3), bottom: u(2), fontSize: u(4), background: hero.accent, color: '#1a1028', padding: `0 ${u(1.6)}`, borderRadius: u(1.2) }}>
+          {s.persona.name}
+        </span>
+        <span className="absolute font-mono font-bold uppercase" style={{ right: u(3), bottom: u(2.6), fontSize: u(3), color: hero.light ? '#1a1028' : '#ffffff' }}>
+          Peak {clock12(s.peakHour)}
+        </span>
+      </div>
       <div className="grid grid-cols-2" style={{ gap: u(5), marginTop: u(7) }}>
         <div className={a} style={d(250)}>
           <div className="font-medium opacity-70" style={{ fontSize: u(3.4) }}>{summaryLabels(s).people}</div>
@@ -684,8 +674,8 @@ export function Summary({ s, animate = true, actions = false }) {
           <div className="font-extrabold tabular-nums" style={{ fontSize: u(9), letterSpacing: '-0.03em' }}>{fmt(s.commits)}</div>
         </div>
         <div className={a} style={d(550)}>
-          <div className="font-medium opacity-70" style={{ fontSize: u(3.4) }}>{summaryLabels(s).type}</div>
-          <div className="font-extrabold" style={{ fontSize: u(6.4), lineHeight: 1.15, marginTop: u(1.2) }}>{s.persona.name}</div>
+          <div className="font-medium opacity-70" style={{ fontSize: u(3.4) }}>Days in the green</div>
+          <div className="font-extrabold tabular-nums" style={{ fontSize: u(9), letterSpacing: '-0.03em', color: GREENS[4] }}>{s.cal ? fmt(s.cal.activeDays) : '—'}</div>
         </div>
       </div>
       <div className={`${a} mt-auto flex items-center justify-between`} style={{ ...d(650), fontSize: u(3.4) }}>

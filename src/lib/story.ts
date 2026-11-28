@@ -197,24 +197,7 @@ export const clock12Of = (hhmm: string) => clock12(+hhmm.slice(0, 2), +hhmm.slic
 export const isSolo = (s: Pick<StoryStats, 'authors'>) => s.authors === 1
 
 /** The Summary's labels, worded for a team or for one person (the slide and its saved image share them). */
-export const summaryLabels = (s: Pick<StoryStats, 'authors'>) =>
-  isSolo(s) ? { people: 'Made by', type: 'Your type' } : { people: 'Top contributors', type: 'Team type' }
-
-/**
- * The Summary's contribution wall: the whole calendar, week columns folded into bands so it fills a box of
- * `aspect` (width ÷ height) whatever the history's length. In units of one square plus its gap, the wall is `cols`
- * wide and `bands * 8 - 1` tall (a blank row between bands); week i sits in band ⌊i / cols⌋, column i % cols.
- */
-export function wallLayout(weeks: number, aspect: number) {
-  let best = { bands: 1, cols: Math.max(1, weeks), pitch: 0 }
-  for (let bands = 1; bands <= weeks; bands++) {
-    const cols = Math.ceil(weeks / bands)
-    const pitch = Math.min(aspect / cols, 1 / (bands * 8 - 1)) // the square's size, with the box 1 tall
-    if (pitch > best.pitch) best = { bands, cols, pitch }
-    if (cols === 1) break
-  }
-  return { bands: best.bands, cols: best.cols, rows: best.bands * 8 - 1 }
-}
+export const summaryLabels = (s: Pick<StoryStats, 'authors'>) => ({ people: isSolo(s) ? 'Made by' : 'Top contributors' })
 
 /** People named on the biggest day, most commits first; `crew` counts everyone. */
 export const BUSIEST_PEOPLE = 6
