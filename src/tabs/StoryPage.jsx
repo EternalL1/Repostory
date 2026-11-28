@@ -154,7 +154,8 @@ function StoryPlayer({ stats, onClose, shared = false }) {
   }
 
   const slide = slides[index]
-  const light = isLight(slide.theme.bg)
+  // the chrome takes the slide's own text color, so the two always agree (the When sky picks its text per hour)
+  const light = !isLight(slide.theme.fg)
   const chrome = light ? 'text-black/80' : 'text-white/90'
   const roundBtn = `press grid size-9 cursor-pointer place-items-center rounded-full ${light ? 'hover:bg-black/10' : 'hover:bg-white/15'}`
 
