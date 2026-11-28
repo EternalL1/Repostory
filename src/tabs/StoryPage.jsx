@@ -4,7 +4,7 @@ import { Backdrop } from '../components/story/art'
 import { slidesFor, StoryHold, StoryPaused, Summary } from '../components/story/slides'
 import { Button, CopyButton, fieldClass } from '../components/ui'
 import { onlyAuthors } from '../lib/git'
-import { storyStats, toSnapshot } from '../lib/story'
+import { namesInShare, storyStats, toSnapshot } from '../lib/story'
 import { teamStats } from '../lib/team'
 import { count } from '../lib/kpi'
 import { deleteLink, rememberToken } from '../lib/shareTokens'
@@ -238,6 +238,8 @@ const list = (items) => items.join(', ')
 
 /** Asks before anything leaves the browser: lists exactly what a share link stores, then hands over the link. */
 function SharePanel({ stats, onClose, peopleLeftOut = false }) {
+  // the top contributors and anyone else on the biggest day
+  const names = namesInShare(stats)
   const [state, setState] = useState({ status: 'idle' })
 
   const create = async () => {
@@ -307,11 +309,11 @@ function SharePanel({ stats, onClose, peopleLeftOut = false }) {
       <p className="m-0 mt-1 text-soft">The link stores only what the slides show:</p>
       <ul className="m-0 mt-2 grid list-disc gap-1 pl-5 text-soft marker:text-muted">
         <li>the repository name, <span className="font-mono text-xs text-fg">{stats.name}</span></li>
-        {stats.top.length > 0 && <li>{stats.top.length === 1 ? '1 contributor name' : `${stats.top.length} contributor names`}: <span className="text-fg">{list(stats.top.map((t) => t.name))}</span></li>}
+        {names.length > 0 && <li>{names.length === 1 ? '1 name' : `${names.length} names`}: <span className="text-fg">{list(names)}</span></li>}
         {stats.hotspots.length > 0 && <li>{stats.hotspots.length === 1 ? '1 file path' : `${stats.hotspots.length} file paths`}: <span className="break-all font-mono text-xs text-fg">{list(stats.hotspots.map((f) => f.path))}</span></li>}
         {stats.topWord && <li>the most common first word of a commit message, <span className="text-fg">“{stats.topWord.word}”</span></li>}
         {stats.flow && <li>the busiest branch flow, <span className="font-mono text-xs text-fg">{stats.flow.from} → {stats.flow.into}</span></li>}
-        <li>counts and dates: commits, days, streaks, hours</li>
+        <li>counts, dates and times: commits, days, streaks, hours, the biggest day's first and last commit</li>
       </ul>
       <p className="m-0 mt-2 text-soft">Your git log, commit messages and the rest of your files stay in this browser. The link expires after a year.</p>
       {state.status === 'error' && <p role="alert" className="m-0 mt-2 text-danger">{state.message}</p>}
