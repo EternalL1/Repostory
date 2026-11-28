@@ -257,7 +257,7 @@ const STARS = Array.from({ length: 22 }, (_, i) => [(i * 37) % 97, 8 + ((i * 53)
 
 /**
  * The longest streak as a campfire at night: one log drops onto the pile per day (nine at most), then the fire flares
- * up, as big as the streak (it grows slower as the streak gets long), and keeps flickering.
+ * up, as big as the streak (it grows slower as the streak gets long), and sparks keep rising from it.
  */
 function Streak({ s }) {
   const { len, from, to } = s.cal.streak
@@ -279,7 +279,7 @@ function Streak({ s }) {
       {/* the glow on the ground, the fire, the pile */}
       <div className="absolute rounded-[50%]" style={{ left: '50%', bottom: u(30), width: u(size * 2.4), height: u(size * 0.7), marginLeft: u(-size * 1.2), background: 'radial-gradient(closest-side, rgba(255,138,31,0.45), transparent)' }} />
       <div className="story-flame absolute" style={{ ...d(flare), left: '50%', bottom: u(37), width: u(size), marginLeft: u(-size / 2) }}>
-        <PixelFlame delay={flare + 700} />
+        <PixelFlame />
       </div>
       <div className="absolute" style={{ left: '50%', bottom: u(30), width: u(56), marginLeft: u(-28), height: u(14) }}>
         {Array.from({ length: logs }, (_, i) => {

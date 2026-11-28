@@ -182,18 +182,14 @@
   animation-delay: var(--d, 0ms);
 }
 
-/* Streak: logs drop onto the pile, the fire flares once, then flickers through three frames like a GIF (each frame
-   shows for a third of the loop, staggered by --f); sparks keep rising from it, each drifting by its own --x */
+/* Streak: logs drop onto the pile, the fire flares once and then holds still; sparks keep rising from it, each
+   drifting by its own --x */
 @keyframes story-log {
   from { opacity: 0; transform: translateY(-8cqw) rotate(var(--r, 0deg)); }
 }
 @keyframes story-flame {
   from { opacity: 0; transform: scale(0.3); }
   70% { opacity: 1; transform: scale(1.08); }
-}
-@keyframes story-frame {
-  0% { opacity: 1; }
-  33.333% { opacity: 0; }
 }
 @keyframes story-spark {
   from { opacity: 0; transform: translate(0, 0); }
@@ -209,14 +205,6 @@
   animation: story-flame 700ms var(--ease-out-strong) both;
   animation-delay: var(--d, 0ms);
 }
-.story-frame {
-  opacity: 0;
-  animation: story-frame 540ms step-end infinite;
-  animation-delay: calc(var(--d, 0ms) + var(--f, 0) * 180ms);
-}
-.story-frame:first-child {
-  opacity: 1;
-}
 .story-spark {
   opacity: 0;
   animation: story-spark 1800ms ease-out infinite backwards;
@@ -225,7 +213,6 @@
 
 .story-paused .story-log,
 .story-paused .story-flame,
-.story-paused .story-frame,
 .story-paused .story-spark,
 .story-paused .story-swap,
 .story-paused .story-deal,
@@ -281,11 +268,6 @@
     animation-name: story-fade;
     animation-delay: 0ms !important;
   }
-  /* a still fire: frame 1 only, no sparks */
-  .story-frame {
-    animation: none;
-  }
-  .story-frame:not(:first-child),
   .story-spark {
     display: none;
   }
