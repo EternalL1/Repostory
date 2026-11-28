@@ -3,7 +3,7 @@ import { join } from 'node:path'
 import { ImageResponse } from 'next/og'
 import { identiconCells, identiconColor, STORY_LANES } from '../../../components/story/art'
 import { getShare } from '../../../db/shares'
-import { fmt } from '../../../lib/story'
+import { fmt, isSolo } from '../../../lib/story'
 
 // The link-preview card for a shared Story, in the poster's palette (see lib/storyImage.ts)
 export const alt = 'A Repostory Story'
@@ -69,7 +69,8 @@ export default async function Image({ params }: { params: Promise<{ slug: string
               <span style={{ fontSize: 150, fontWeight: 800, lineHeight: 1, letterSpacing: -4 }}>{fmt(stats.commits)}</span>
               <div style={{ display: 'flex', gap: 56, marginTop: 28 }}>
                 <div style={{ display: 'flex', flexDirection: 'column' }}>
-                  <span style={label}>Team type</span>
+                  {/* seen by whoever the link is sent to, so never "Your" */}
+                  <span style={label}>{isSolo(stats) ? 'Coder type' : 'Team type'}</span>
                   <span style={{ fontSize: 44, fontWeight: 800 }}>{stats.persona.name}</span>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column' }}>
