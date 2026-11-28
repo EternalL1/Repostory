@@ -3,7 +3,7 @@ import { buildModel, type Model } from './git'
 import { SAMPLES } from './samples'
 import { onlyAuthors } from './git'
 import { dayStats } from './team'
-import { BUSIEST_PEOPLE, calendar, clock12, clock12Of, calendarFrom, calendarLayout, dailyCounts, fileLabels, fromSnapshot, MONTHS, isSolo, storyStats, summaryLabels, toSnapshot, wallLayout } from './story'
+import { BUSIEST_PEOPLE, calendar, clock12, clock12Of, calendarFrom, calendarLayout, dailyCounts, fileLabels, fromSnapshot, MONTHS, isSolo, storyStats, summaryLabels, toSnapshot } from './story'
 
 // ── the calendar exactly as it was computed before shares stored daily counts (characterization reference) ──
 const DAY_MS = 86_400_000
@@ -203,35 +203,14 @@ describe('the biggest day', () => {
   })
 })
 
-describe('wallLayout', () => {
-  const aspect = 2
-  it('keeps up to a year or so as one strip of weeks', () => {
-    expect(wallLayout(27, aspect)).toEqual({ bands: 1, cols: 27, rows: 7 })
-    expect(wallLayout(1, aspect)).toEqual({ bands: 1, cols: 1, rows: 7 })
-  })
-
-  it('folds a long history into bands that fill the box, every week placed once', () => {
-    for (const weeks of [60, 160, 520, 1500]) {
-      const { bands, cols, rows } = wallLayout(weeks, aspect)
-      expect(bands).toBeGreaterThan(1)
-      expect(bands * cols).toBeGreaterThanOrEqual(weeks)
-      expect((bands - 1) * cols).toBeLessThan(weeks) // no empty band
-      expect(rows).toBe(bands * 8 - 1)
-      // the wall's shape stays near the box's: neither a thin strip nor a tall column
-      expect(cols / rows).toBeGreaterThan(aspect / 2.5)
-      expect(cols / rows).toBeLessThan(aspect * 2.5)
-    }
-  })
-})
-
 describe('a Story about one person', () => {
   it('speaks to them when everyone else is left out, and to the team otherwise', () => {
     const sample = SAMPLES.find((x) => x.id === 'storefront')!
     const team = storyStats(buildModel(sample.text(), sample.name))
     const one = storyStats(onlyAuthors(buildModel(sample.text(), sample.name), new Set(['Priya Nair'])))
     expect([isSolo(team), isSolo(one)]).toEqual([false, true])
-    expect(summaryLabels(team)).toEqual({ people: 'Top contributors', type: 'Team type' })
-    expect(summaryLabels(one)).toEqual({ people: 'Made by', type: 'Your type' })
+    expect(summaryLabels(team)).toEqual({ people: 'Top contributors' })
+    expect(summaryLabels(one)).toEqual({ people: 'Made by' })
   })
 })
 

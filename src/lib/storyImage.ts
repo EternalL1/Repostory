@@ -1,8 +1,9 @@
 // Draws the Story's summary poster to a 1080×1920 PNG (the size stories use), mirroring the Summary slide.
 import { STORY_LANES } from '../components/story/art'
 import { GREENS } from '../components/story/CalendarGrid'
-import { WALL, wallHeight } from '../components/story/slides'
-import { fileLabels, fmt, isSolo, type StoryStats, summaryLabels, wallLayout } from './story'
+import { MASCOTS } from '../components/story/pixelArt'
+import { HERO } from '../components/story/slides'
+import { clock12, fileLabels, fmt, isSolo, type StoryStats, summaryLabels } from './story'
 
 const W = 1080
 const H = 1920
@@ -57,38 +58,42 @@ export async function renderSummaryPng(s: StoryStats): Promise<Blob | null> {
   ctx.fillText(s.year, W - pad, y)
   ctx.textAlign = 'left'
 
-  // hero: the contribution wall, as the slide draws it
-  if (s.cal) {
-    y += 3 * U
-    const layout = wallLayout(s.cal.weeks.length, WALL.w / WALL.h)
-    const { cols, rows } = layout
-    const boxW = WALL.w * U
-    const boxH = wallHeight(layout) * U
-    // padding, the wall, the caption line (2.4 gap + 3.6 line) and the bottom padding, as on the slide
-    const heroH = WALL.pad * U + boxH + 6 * U + 3 * U
-    ctx.fillStyle = '#0b0d12'
-    ctx.fillRect(pad, y, W - pad * 2, heroH)
-    const pitch = Math.min(boxW / cols, boxH / rows)
-    const x0 = pad + WALL.pad * U + (boxW - cols * pitch) / 2
-    const y0 = y + WALL.pad * U + (boxH - rows * pitch) / 2
-    s.cal.weeks.forEach((week, i) => week.forEach((c, k) => {
-      if (c.out) return
-      ctx.fillStyle = GREENS[c.level]
-      ctx.fillRect(x0 + (i % cols) * pitch, y0 + (Math.floor(i / cols) * 8 + k) * pitch, pitch * 0.82, pitch * 0.82)
-    }))
-    ctx.font = `700 ${3 * U}px ${MONO}`
-    const days = fmt(s.cal.activeDays)
-    const cy = y + heroH - 3 * U - 0.6 * U
-    ctx.fillStyle = GREENS[4]
-    ctx.fillText(days, pad + 4 * U, cy)
-    const dx = ctx.measureText(`${days} `).width
-    ctx.font = `500 ${3 * U}px ${MONO}`
-    ctx.fillStyle = 'rgba(255,255,255,0.7)'
-    ctx.fillText(s.cal.activeDays === 1 ? 'day in the green' : 'days in the green', pad + 4 * U + dx, cy)
-    y += heroH + 7 * U
-  } else {
-    y += 3 * U
-  }
+  // hero: the persona's mascot in its sky, as the slide draws it
+  y += 3 * U
+  const m = MASCOTS[s.persona.name as keyof typeof MASCOTS]
+  const heroW = W - pad * 2
+  const heroH = HERO.h * U
+  const sky = ctx.createLinearGradient(0, y, 0, y + heroH)
+  sky.addColorStop(0, m.sky[0])
+  sky.addColorStop(1, m.sky[1])
+  ctx.fillStyle = sky
+  ctx.fillRect(pad, y, heroW, heroH)
+  ctx.fillStyle = 'rgba(0,0,0,0.18)'
+  ctx.fillRect(pad, y + heroH - HERO.ground * U, heroW, HERO.ground * U)
+  const mp = (HERO.mascot * U) / 16
+  const mx = pad + (heroW - HERO.mascot * U) / 2
+  const my = y + heroH - (HERO.ground - 2) * U - HERO.mascot * U
+  m.map.forEach((row: string, j: number) => [...row.padEnd(16, '.')].forEach((ch, i) => {
+    const c = (m.colors as Record<string, string>)[ch]
+    if (!c) return
+    ctx.fillStyle = c
+    ctx.fillRect(mx + i * mp, my + j * mp, Math.ceil(mp), Math.ceil(mp))
+  }))
+  // the name on its sticker, bottom left; the peak hour, bottom right
+  ctx.font = `800 ${4 * U}px ${SANS}`
+  const tw = ctx.measureText(s.persona.name).width
+  ctx.fillStyle = m.accent
+  ctx.beginPath()
+  ctx.roundRect(pad + 3 * U, y + heroH - 2 * U - 5.6 * U, tw + 3.2 * U, 5.6 * U, 1.2 * U)
+  ctx.fill()
+  ctx.fillStyle = '#1a1028'
+  ctx.fillText(s.persona.name, pad + 4.6 * U, y + heroH - 2 * U - 1.5 * U)
+  ctx.font = `700 ${3 * U}px ${MONO}`
+  ctx.fillStyle = m.light ? '#1a1028' : '#ffffff'
+  ctx.textAlign = 'right'
+  ctx.fillText(`PEAK ${clock12(s.peakHour)}`, pad + heroW - 3 * U, y + heroH - 2.6 * U - 0.6 * U)
+  ctx.textAlign = 'left'
+  y += heroH + 7 * U
 
   // two columns
   const colW = (W - pad * 2 - 5 * U) / 2
@@ -114,20 +119,12 @@ export async function renderSummaryPng(s: StoryStats): Promise<Blob | null> {
   ctx.font = `500 ${3.4 * U}px ${SANS}`
   ctx.fillStyle = 'rgba(255,255,255,0.7)'
   ctx.fillText('Commits', pad, y + 3.4 * U)
-  ctx.fillText(labels.type, pad + colW + 5 * U, y + 3.4 * U)
+  ctx.fillText('Days in the green', pad + colW + 5 * U, y + 3.4 * U)
   ctx.fillStyle = '#ffffff'
   ctx.font = `800 ${9 * U}px ${SANS}`
   ctx.fillText(fmt(s.commits), pad, y + 3.4 * U + 9 * U)
-  ctx.font = `800 ${6.4 * U}px ${SANS}`
-  // two words, two lines when it does not fit on one (as the slide wraps it)
-  const px = pad + colW + 5 * U
-  const py = y + 3.4 * U + 1.2 * U + 6.4 * U
-  if (ctx.measureText(s.persona.name).width <= colW) ctx.fillText(s.persona.name, px, py)
-  else {
-    const [w1, ...rest] = s.persona.name.split(' ')
-    ctx.fillText(fit(ctx, w1, colW), px, py)
-    ctx.fillText(fit(ctx, rest.join(' '), colW), px, py + 7.4 * U)
-  }
+  ctx.fillStyle = GREENS[4]
+  ctx.fillText(s.cal ? fmt(s.cal.activeDays) : '—', pad + colW + 5 * U, y + 3.4 * U + 9 * U)
 
   // footer
   const fy = H - 6 * U
