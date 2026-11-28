@@ -3,7 +3,7 @@ import { buildModel, type Model } from './git'
 import { SAMPLES } from './samples'
 import { onlyAuthors } from './git'
 import { dayStats } from './team'
-import { BUSIEST_PEOPLE, calendar, calendarFrom, calendarLayout, dailyCounts, fileLabels, fromSnapshot, MONTHS, isSolo, storyStats, summaryLabels, toSnapshot, wallLayout } from './story'
+import { BUSIEST_PEOPLE, calendar, clock12, clock12Of, calendarFrom, calendarLayout, dailyCounts, fileLabels, fromSnapshot, MONTHS, isSolo, storyStats, summaryLabels, toSnapshot, wallLayout } from './story'
 
 // ── the calendar exactly as it was computed before shares stored daily counts (characterization reference) ──
 const DAY_MS = 86_400_000
@@ -232,5 +232,14 @@ describe('a Story about one person', () => {
     expect([isSolo(team), isSolo(one)]).toEqual([false, true])
     expect(summaryLabels(team)).toEqual({ people: 'Top contributors', type: 'Team type' })
     expect(summaryLabels(one)).toEqual({ people: 'Made by', type: 'Your type' })
+  })
+})
+
+describe('clock12', () => {
+  it('reads the 12-hour clock, with noon and midnight as 12', () => {
+    expect([0, 1, 11, 12, 13, 23].map((h) => clock12(h))).toEqual(['12 AM', '1 AM', '11 AM', '12 PM', '1 PM', '11 PM'])
+    expect(clock12(9, 5)).toBe('9:05 AM')
+    expect(clock12Of('20:31')).toBe('8:31 PM')
+    expect(clock12Of('00:07')).toBe('12:07 AM')
   })
 })
