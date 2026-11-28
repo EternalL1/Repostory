@@ -2,7 +2,7 @@
 import { STORY_LANES } from '../components/story/art'
 import { GREENS } from '../components/story/CalendarGrid'
 import { WALL, wallHeight } from '../components/story/slides'
-import { fileLabels, fmt, type StoryStats, wallLayout } from './story'
+import { fileLabels, fmt, isSolo, type StoryStats, summaryLabels, wallLayout } from './story'
 
 const W = 1080
 const H = 1920
@@ -92,7 +92,8 @@ export async function renderSummaryPng(s: StoryStats): Promise<Blob | null> {
 
   // two columns
   const colW = (W - pad * 2 - 5 * U) / 2
-  const col = (x: number, title: string, items: string[], paths = false) => {
+  // ranked 1, 2, 3… unless it is a single name (a Story about one person)
+  const col = (x: number, title: string, items: string[], paths = false, ranked = true) => {
     ctx.font = `500 ${3.4 * U}px ${SANS}`
     ctx.fillStyle = 'rgba(255,255,255,0.7)'
     ctx.fillText(title, x, y + 3.4 * U)
@@ -100,18 +101,20 @@ export async function renderSummaryPng(s: StoryStats): Promise<Blob | null> {
     ctx.fillStyle = '#ffffff'
     items.forEach((t, i) => {
       const ly = y + 3.4 * U + 1.5 * U + (i + 1) * 6 * U - 1.2 * U
-      ctx.fillText(String(i + 1), x, ly)
-      ctx.fillText(paths ? fitPath(ctx, t, colW - 5 * U) : fit(ctx, t, colW - 5 * U), x + 5 * U, ly)
+      const tx = ranked ? x + 5 * U : x
+      if (ranked) ctx.fillText(String(i + 1), x, ly)
+      ctx.fillText(paths ? fitPath(ctx, t, colW - 5 * U) : fit(ctx, t, x + colW - tx), tx, ly)
     })
   }
-  col(pad, 'Top contributors', s.top.map((t) => t.name))
+  const labels = summaryLabels(s)
+  col(pad, labels.people, s.top.map((t) => t.name), false, !isSolo(s))
   col(pad + colW + 5 * U, 'Most-changed files', s.hotspots.length ? fileLabels(s.hotspots.map((f) => f.path)) : ['—'], true)
   y += 3.4 * U + 1.5 * U + Math.max(s.top.length, s.hotspots.length, 1) * 6 * U + 5 * U
 
   ctx.font = `500 ${3.4 * U}px ${SANS}`
   ctx.fillStyle = 'rgba(255,255,255,0.7)'
   ctx.fillText('Commits', pad, y + 3.4 * U)
-  ctx.fillText('Team type', pad + colW + 5 * U, y + 3.4 * U)
+  ctx.fillText(labels.type, pad + colW + 5 * U, y + 3.4 * U)
   ctx.fillStyle = '#ffffff'
   ctx.font = `800 ${9 * U}px ${SANS}`
   ctx.fillText(fmt(s.commits), pad, y + 3.4 * U + 9 * U)

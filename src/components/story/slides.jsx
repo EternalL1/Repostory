@@ -2,7 +2,7 @@
 // phone, in the desktop player and in the small poster on the Story tab.
 import { useContext, useEffect, useRef, useState } from 'react'
 import { PixelFire, PixelLogo } from '../pixel'
-import { fileLabels, fmt, shortDay, wallLayout } from '../../lib/story'
+import { fileLabels, fmt, isSolo, shortDay, summaryLabels, wallLayout } from '../../lib/story'
 import { Identicon } from './art'
 import CalendarGrid, { GREENS } from './CalendarGrid'
 import { StoryPaused } from './context'
@@ -76,7 +76,7 @@ function Intro({ s }) {
         <span className="truncate opacity-80">{s.name}</span>
       </div>
       <h2 className="story-rise relative m-0 font-extrabold" style={{ ...d(250), fontSize: u(15), lineHeight: 0.92, letterSpacing: '-0.045em', marginTop: u(4) }}>
-        The story
+        {isSolo(s) ? 'Your story' : 'The story'}
         <br />
         so far
       </h2>
@@ -95,7 +95,7 @@ function Commits({ s }) {
   const pace = s.perDay >= 1 ? `That's ${s.perDay.toFixed(1)} a day, every day.` : `One every ${Math.round(1 / s.perDay)} days. Slow and steady.`
   return (
     <Center>
-      <Headline>This repo shipped</Headline>
+      <Headline>{isSolo(s) ? 'You shipped' : 'This repo shipped'}</Headline>
       <Big>{fmt(n)}</Big>
       <Headline delay={250} size={7}>commits in {fmt(s.spanDays)} days</Headline>
       <Sub delay={700}>{pace}</Sub>
@@ -162,7 +162,7 @@ function Busiest({ s }) {
       </div>
     )
   }
-  const who = b.people?.length === 1 ? firstName(b.people[0].name) : null
+  const who = isSolo(s) ? 'Your' : b.people?.length === 1 ? `${firstName(b.people[0].name)}’s` : 'The'
   return (
     <div className="absolute inset-0 overflow-hidden" style={desk}>
       <div className="absolute inset-x-0 flex justify-center" style={{ top: u(34) }}>
@@ -172,7 +172,7 @@ function Busiest({ s }) {
         </div>
       </div>
       <div className="absolute inset-x-0 bottom-0 text-center" style={{ padding: `0 ${u(9)} ${u(16)}` }}>
-        <Headline delay={1000}>{who ? `${who}’s biggest day` : 'The biggest day'}</Headline>
+        <Headline delay={1000}>{who} biggest day</Headline>
         <Sub delay={1150}>
           {b.first && b.last && b.first !== b.last ? `${b.count} commits, ${b.first} to ${b.last}. ` : ''}Where did you find the time?
         </Sub>
@@ -190,7 +190,7 @@ function Calendar({ s, theme }) {
   const n = useCountUp(s.cal.activeDays)
   return (
     <div className="relative flex h-full flex-col justify-center" style={{ padding: `0 ${u(9)}` }}>
-      <p className="story-rise m-0 font-mono opacity-70" style={{ ...d(0), fontSize: u(3.4) }}>Contributions</p>
+      <p className="story-rise m-0 font-mono opacity-70" style={{ ...d(0), fontSize: u(3.4) }}>{isSolo(s) ? 'Your contributions' : 'Contributions'}</p>
       <Big size={26}>
         <span style={{ color: '#4ff0a0' }}>{fmt(n)}</span>
       </Big>
@@ -215,7 +215,7 @@ function BestMonth({ s }) {
   const m = s.cal.month
   return (
     <div className="relative flex h-full flex-col justify-center" style={{ padding: `0 ${u(9)}` }}>
-      <p className="story-rise m-0 font-mono opacity-70" style={{ ...d(0), fontSize: u(3.4) }}>Greenest month</p>
+      <p className="story-rise m-0 font-mono opacity-70" style={{ ...d(0), fontSize: u(3.4) }}>{isSolo(s) ? 'Your greenest month' : 'Greenest month'}</p>
       <Headline delay={150} size={11}>
         {m.name} {m.year}
       </Headline>
@@ -264,7 +264,7 @@ function Streak({ s, theme }) {
       </div>
       <Headline delay={300}>days, no days off</Headline>
       <Sub delay={500}>
-        {streakRange(from, to, s.cal.spanDays > 366)}. The longest the squares stayed green.
+        {streakRange(from, to, s.cal.spanDays > 366)}. {isSolo(s) ? 'The longest you kept the squares green.' : 'The longest the squares stayed green.'}
       </Sub>
       <div style={{ marginTop: u(9) }}>
         <CalendarGrid cal={s.cal} delay={700} highlight={{ from, to }} bg={theme.bg} />
@@ -311,7 +311,7 @@ function HourRing({ hours, peak, fg, hot }) {
 function Clock({ s, theme }) {
   return (
     <Center>
-      <Headline size={6}>This team is a</Headline>
+      <Headline size={6}>{isSolo(s) ? 'You’re a' : 'This team is a'}</Headline>
       <Headline delay={150} size={12} className="mt-[1cqw]">
         <span style={{ color: theme.hot }}>{s.persona.name}</span>
       </Headline>
@@ -408,7 +408,7 @@ function Files({ s, theme }) {
     <div className="relative flex h-full flex-col justify-center" style={{ padding: `0 ${u(7)}` }}>
       <div className="rounded-[3cqw]" style={{ background: theme.card, padding: `${u(7)} ${u(6)}` }}>
         <Headline size={6.4} className="text-left">
-          {fmt(s.files)} files touched, but these changed again and again
+          {isSolo(s) ? `You touched ${fmt(s.files)} files, but kept coming back to these` : `${fmt(s.files)} files touched, but these changed again and again`}
         </Headline>
         <ol className="m-0 list-none p-0" style={{ marginTop: u(5) }}>
           {s.hotspots.map((f, i) => (
@@ -434,7 +434,7 @@ function Files({ s, theme }) {
 function Word({ s }) {
   return (
     <Center>
-      <Headline size={6}>The word most commits open with</Headline>
+      <Headline size={6}>{isSolo(s) ? 'The word you open commits with' : 'The word most commits open with'}</Headline>
       <Big size={s.topWord.word.length > 7 ? 15 : 22}>“{s.topWord.word}”</Big>
       <Sub delay={600}>
         {fmt(s.topWord.count)} times. {s.topWord.word === 'fix' ? 'Bugs never stood a chance.' : 'Say it like you mean it.'}
@@ -481,11 +481,11 @@ export function Summary({ s, animate = true, actions = false }) {
       )}
       <div className="grid grid-cols-2" style={{ gap: u(5), marginTop: u(7) }}>
         <div className={a} style={d(250)}>
-          <div className="font-medium opacity-70" style={{ fontSize: u(3.4) }}>Top contributors</div>
+          <div className="font-medium opacity-70" style={{ fontSize: u(3.4) }}>{summaryLabels(s).people}</div>
           <ol className="m-0 list-none p-0" style={{ marginTop: u(1.5) }}>
             {s.top.map((t, i) => (
               <li key={t.name} className="truncate font-bold" style={{ fontSize: u(4), lineHeight: 1.5 }}>
-                <span className="inline-block tabular-nums" style={{ width: u(5) }}>{i + 1}</span>
+                {!isSolo(s) && <span className="inline-block tabular-nums" style={{ width: u(5) }}>{i + 1}</span>}
                 {t.name}
               </li>
             ))}
@@ -515,7 +515,7 @@ export function Summary({ s, animate = true, actions = false }) {
           <div className="font-extrabold tabular-nums" style={{ fontSize: u(9), letterSpacing: '-0.03em' }}>{fmt(s.commits)}</div>
         </div>
         <div className={a} style={d(550)}>
-          <div className="font-medium opacity-70" style={{ fontSize: u(3.4) }}>Team type</div>
+          <div className="font-medium opacity-70" style={{ fontSize: u(3.4) }}>{summaryLabels(s).type}</div>
           <div className="font-extrabold" style={{ fontSize: u(6.4), lineHeight: 1.15, marginTop: u(1.2) }}>{s.persona.name}</div>
         </div>
       </div>

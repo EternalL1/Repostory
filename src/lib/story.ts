@@ -184,6 +184,13 @@ export function fileLabels(paths: string[]): string[] {
 
 export const fmt = (n: number) => n.toLocaleString('en-US')
 
+/** A Story about one person (the repo has one author, or everyone else was left out) speaks to them: "You shipped". */
+export const isSolo = (s: Pick<StoryStats, 'authors'>) => s.authors === 1
+
+/** The Summary's labels, worded for a team or for one person (the slide and its saved image share them). */
+export const summaryLabels = (s: Pick<StoryStats, 'authors'>) =>
+  isSolo(s) ? { people: 'Made by', type: 'Your type' } : { people: 'Top contributors', type: 'Team type' }
+
 /**
  * The Summary's contribution wall: the whole calendar, week columns folded into bands so it fills a box of
  * `aspect` (width ÷ height) whatever the history's length. In units of one square plus its gap, the wall is `cols`
