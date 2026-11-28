@@ -207,7 +207,7 @@
 }
 .story-spark {
   opacity: 0;
-  animation: story-spark 1800ms ease-out infinite backwards;
+  animation: story-spark var(--ms, 1800ms) ease-out infinite backwards;
   animation-delay: var(--d, 0ms);
 }
 
